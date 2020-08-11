@@ -1,6 +1,5 @@
 from mesa import Model
 from mesa.time import RandomActivation
-from mesa.space import MultiGrid
 from mesa.datacollection import DataCollector
 from mesa_geo.geoagent import GeoAgent, AgentCreator
 from mesa_geo import GeoSpace
@@ -8,8 +7,8 @@ from mesa_geo import GeoSpace
 import geopandas as gpd
 
 class ForceAgent(GeoAgent):
-  """ 
-  Agent representing a police force
+  """
+  Agent representing a police force area
   """
   def __init__(self, unique_id, model, shape):
 
@@ -44,19 +43,19 @@ class PublicOrderPolicing(Model):
     # Use a multi grid so that >1 agent can occupy the same location
     self.grid = GeoSpace()
 
-    # Set up the force agents 
+    # Set up the force agents
     boundaries = gpd.read_file("../../protocop/cache/data/boundaries/forces.shp")
-    # coordinates are east/northings 
+    # coordinates are east/northings
     #boundaries = gpd.read_file("../model-data-for-andrew/Police_Force_Areas_December_2016_Full_Clipped_Boundaries_in_England_and_Wales.shp")
-    #boundaries.crs = { "init": "epsg:3857" } 
-    boundaries.crs = { "init": "epsg:4326" } 
+    #boundaries.crs = { "init": "epsg:3857" }
+    boundaries.crs = { "init": "epsg:4326" }
     #print(boundaries.head())
     factory = AgentCreator(ForceAgent, {"model": self})
     force_agents = factory.from_GeoDataFrame(boundaries)
     self.grid.add_agents(force_agents) 
 
     for agent in force_agents:
-      self.schedule.add(agent)     
+      self.schedule.add(agent)
 
     self.log.append("Initialised model")
     self.running = True
@@ -72,5 +71,5 @@ class PublicOrderPolicing(Model):
     #self.datacollector.collect(self)
 
     # Halt the model
-    running=False
+    self.running=False
 
