@@ -1,16 +1,12 @@
 from mesa_geo.visualization.ModularVisualization import ModularServer
-from mesa.visualization.modules import CanvasGrid, ChartModule
-#from mesa.visualization.ModularVisualization import ModularServer
-from mesa.visualization.UserParam import UserSettableParameter
+#from mesa.visualization.modules import CanvasGrid, ChartModule
+#from mesa.visualization.UserParam import UserSettableParameter
 
 from mesa_geo.visualization.MapModule import MapModule
-#from .visualization.MapElement import MapElement
 from .visualization.LogElement import LogElement
 
-from .portrayal import portray_cell, portray_map
+from .portrayal import portray_map
 from .model import PublicOrderPolicing
-
-
 
 model_params = {
   # "initial_proportion": UserSettableParameter(
@@ -26,8 +22,7 @@ model_params = {
   # "max_survival_neighbours": UserSettableParameter("slider", "Maximum neighbours for survival", 3, 0, 8, 1),
   # "min_birth_neighbours": UserSettableParameter("slider", "Minimum neighbours for cell birth", 3, 0, 8, 1),
   # "max_birth_neighbours": UserSettableParameter("slider", "Maximum neighbours for cell birth", 3, 0, 8, 1)
-}   
-
+}
 
 # Make a world that is 50x50, on a 250x250 display.
 #canvas_element = CanvasGrid(portray_cell, NX, NY, SIZE * NX, SIZE * NY)

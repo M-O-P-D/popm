@@ -27,12 +27,11 @@ Then, run the server:
 mesa runserver .
 ```
 
+### Troubleshooting
+
+If the dependencies don't install it may be because `mesa-geo` package has an external dependency on `libspatialindex-dev` which can be installed with e.g. apt. 
+
 ## Deployment
 
 TODO...
 
-# Notes
-
-[MapElement](./popm/visualization/MapElement.py) from MapModule in https://github.com/Corvince/mesa-geo
-
-The mesa-geo package has an external dependency on `libspatialindex-dev` which can be installed with e.g. apt.
