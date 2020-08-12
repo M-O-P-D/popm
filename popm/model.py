@@ -6,16 +6,29 @@ from mesa_geo import GeoSpace
 
 import geopandas as gpd
 
-class ForceAgent(GeoAgent):
-  """
-  Agent representing a police force area
-  """
-  def __init__(self, unique_id, model, shape):
+from .agents import *
 
-    super().__init__(unique_id, model, shape)
+def _process_geojson(file):
+  # remove and rename columns 
+  gdf = gpd.read_file(file, crs={ "init": "epsg:4326" }) \
+    .drop(["OBJECTID", "BNG_E", "BNG_N"], axis=1) \
+    .rename({"PFA16CD": "code", "PFA16NM": "name"}, axis=1)
 
-  def step(self):
-    pass
+  # NOTE warnings:
+  # pandas/core/generic.py:5155: UserWarning: Geometry is in a geographic CRS. Results from 'area' are likely incorrect. Use 'GeoSeries.to_crs()' 
+  # to re-project geometries to a projected CRS before this operation.  
+  # pyproj/crs/crs.py:53: FutureWarning: '+init=<authority>:<code>' syntax is deprecated. '<authority>:<code>' is the preferred initialization method. 
+  # When making the change, be mindful of axis order changes: https://pyproj4.github.io/pyproj/stable/gotchas.html#axis-order-changes-in-proj-6
+
+  # extract boundary data
+  boundaries = gpd.GeoDataFrame(gdf[["code", "name", "geometry"]])
+  # extract centroid data
+
+  # compute centroids and shift index so that agent ids arent duplicated
+  centroids = gpd.GeoDataFrame(gdf[["code", "name"]], geometry=gpd.points_from_xy(gdf.LONG, gdf.LAT), crs = {"init": "epsg:4326"})
+  centroids.index += 100
+
+  return boundaries, centroids
 
 class PublicOrderPolicing(Model):
   # below ends up in the "About" menu
@@ -27,10 +40,7 @@ class PublicOrderPolicing(Model):
   def __init__(self): #params...
 
     self.log = []
-    self.datacollector = DataCollector(
-        model_reporters={
-        }
-    )
+    self.datacollector = DataCollector(model_reporters={})
 
     # Set up the grid and schedule.
 
@@ -43,18 +53,20 @@ class PublicOrderPolicing(Model):
     # Use a multi grid so that >1 agent can occupy the same location
     self.grid = GeoSpace()
 
-    # Set up the force agents
-    boundaries = gpd.read_file("../../protocop/cache/data/boundaries/forces.shp")
-    # coordinates are east/northings
-    #boundaries = gpd.read_file("../model-data-for-andrew/Police_Force_Areas_December_2016_Full_Clipped_Boundaries_in_England_and_Wales.shp")
-    #boundaries.crs = { "init": "epsg:3857" }
-    boundaries.crs = { "init": "epsg:4326" }
-    #print(boundaries.head())
-    factory = AgentCreator(ForceAgent, {"model": self})
-    force_agents = factory.from_GeoDataFrame(boundaries)
-    self.grid.add_agents(force_agents) 
+    # Ultra Generalised Clipped otherwise too much rendering
+    boundaries, centroids = _process_geojson("data/force_boundaries_ugc.geojson")
 
-    for agent in force_agents:
+    # Set up the force agents
+    factory = AgentCreator(ForceAreaAgent, {"model": self})   
+    force_area_agents = factory.from_GeoDataFrame(boundaries)
+    self.grid.add_agents(force_area_agents) 
+    for agent in force_area_agents:
+      self.schedule.add(agent)
+
+    factory = AgentCreator(ForceCentroidAgent, {"model": self}) 
+    force_centroid_agents = factory.from_GeoDataFrame(centroids)
+    self.grid.add_agents(force_centroid_agents) 
+    for agent in force_centroid_agents:
       self.schedule.add(agent)
 
     self.log.append("Initialised model")
