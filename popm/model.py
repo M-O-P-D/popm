@@ -6,6 +6,7 @@ from mesa_geo import GeoSpace
 
 import pandas as pd
 import geopandas as gpd
+import numpy as np
 
 from .agents import *
 
@@ -43,7 +44,17 @@ def _load_data():
   centroids = gpd.GeoDataFrame(gdf[["code", "name"]], geometry=gpd.points_from_xy(gdf.LONG, gdf.LAT), crs = {"init": "epsg:4326"})
   centroids.index += 100
 
-  return boundaries, centroids
+  # compute distance matrix
+  # convert to different projection for distance computation
+  # see https://gis.stackexchange.com/questions/293310/how-to-use-geoseries-distance-to-get-the-right-answer
+  # index offset by 100 needs to be reset for loop below to work
+  c = centroids.to_crs(epsg=3310).reset_index(drop=True)
+  m = np.zeros((len(c), len(c)))
+  for i in range(len(c)):
+    m[i,:] = c.distance(c.geometry[i]) / 1000.0
+  distances = pd.DataFrame(m, columns=c.name, index=c.name)
+
+  return boundaries, centroids, distances
 
 class PublicOrderPolicing(Model):
   # below ends up in the "About" menu
@@ -69,7 +80,7 @@ class PublicOrderPolicing(Model):
     self.grid = GeoSpace()
 
     # Ultra Generalised Clipped otherwise too much rendering
-    boundaries, centroids = _load_data()
+    boundaries, centroids, distances = _load_data()
 
     # Set up the force agents
     factory = AgentCreator(ForceAreaAgent, {"model": self})   
