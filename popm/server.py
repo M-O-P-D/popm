@@ -39,7 +39,7 @@ model_params = {
 #   ]
 # )
 
-map_element = MapModule(portray_map, [52.9, -1.8], 7, 900, 700)
+map_element = MapModule(portray_map, [52.9, -1.8], 6, 640, 500)
 console = LogElement()
 
 server = ModularServer(PublicOrderPolicing, [map_element, console], "Public Order Policing Model", model_params)

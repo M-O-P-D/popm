@@ -4,15 +4,28 @@ from mesa.datacollection import DataCollector
 from mesa_geo.geoagent import GeoAgent, AgentCreator
 from mesa_geo import GeoSpace
 
+import pandas as pd
 import geopandas as gpd
 
 from .agents import *
 
-def _process_geojson(file):
+def _load_data():
   # remove and rename columns 
-  gdf = gpd.read_file(file, crs={ "init": "epsg:4326" }) \
+  geojson = "./data/force_boundaries_ugc.geojson"
+  force_data = "./data/PFAs-VECTOR-NAMES-Basic-with-Core-with-Alliance.csv"
+
+  gdf = gpd.read_file(geojson, crs={ "init": "epsg:4326" }) \
     .drop(["OBJECTID", "BNG_E", "BNG_N"], axis=1) \
-    .rename({"PFA16CD": "code", "PFA16NM": "name"}, axis=1)
+    .rename({"PFA16CD": "code", "PFA16NM": "name" }, axis=1)
+
+  # length/area units are defined by the crs
+  # df.crs.axis_info[0].unit_name
+
+  data = pd.read_csv(force_data) \
+    .replace({"Metropolitan": "Metropolitan Police"}) \
+    .rename({"Force": "name"}, axis=1)
+
+  gdf = gdf.merge(data, on="name", how="left").fillna(0)
 
   # NOTE warnings:
   # pandas/core/generic.py:5155: UserWarning: Geometry is in a geographic CRS. Results from 'area' are likely incorrect. Use 'GeoSeries.to_crs()' 
@@ -21,10 +34,12 @@ def _process_geojson(file):
   # When making the change, be mindful of axis order changes: https://pyproj4.github.io/pyproj/stable/gotchas.html#axis-order-changes-in-proj-6
 
   # extract boundary data
-  boundaries = gpd.GeoDataFrame(gdf[["code", "name", "geometry"]])
+  boundaries = gpd.GeoDataFrame(gdf[['code', 'name', 'geometry', 'Officers', 'POP', 'Percentage', 'Core-function-1 ',
+    'Core-function-2', 'Core-function-1-POP', 'Core-function-2-POP', 'Alliance']])
   # extract centroid data
 
   # compute centroids and shift index so that agent ids arent duplicated
+  # for now the centroids dont have the force data
   centroids = gpd.GeoDataFrame(gdf[["code", "name"]], geometry=gpd.points_from_xy(gdf.LONG, gdf.LAT), crs = {"init": "epsg:4326"})
   centroids.index += 100
 
@@ -54,7 +69,7 @@ class PublicOrderPolicing(Model):
     self.grid = GeoSpace()
 
     # Ultra Generalised Clipped otherwise too much rendering
-    boundaries, centroids = _process_geojson("data/force_boundaries_ugc.geojson")
+    boundaries, centroids = _load_data()
 
     # Set up the force agents
     factory = AgentCreator(ForceAreaAgent, {"model": self})   
@@ -85,3 +100,8 @@ class PublicOrderPolicing(Model):
     # Halt the model
     self.running=False
 
+
+if __name__ == "__main__":
+  (b,c) = _load_data()
+  print(b.head())
+  print(c.head())
