@@ -15,7 +15,7 @@ def _load_data():
   geojson = "./data/force_boundaries_ugc.geojson"
   force_data = "./data/PFAs-VECTOR-NAMES-Basic-with-Core-with-Alliance.csv"
   # From https://www.gov.uk/government/statistics/population-estimates
-  # TODO get hold of more recent data. 
+  # TODO get hold of more recent data.
   population_data = "./data/population-police-force.csv"
 
   gdf = gpd.read_file(geojson, crs={ "init": "epsg:4326" }) \
@@ -30,7 +30,7 @@ def _load_data():
     .rename({"Force": "name"}, axis=1)
   # TODO what is POP in the above dataset? seems too low for population in 1000s
 
-  populations = pd.read_csv("./data/population-police-force.csv") \
+  populations = pd.read_csv(population_data) \
     .replace({"London, City of": "City of London"}) \
     .rename({"Police Force": "name", "Mid 2010": "population"}, axis=1)[["name", "population"]]
 
@@ -92,7 +92,7 @@ class PublicOrderPolicing(Model):
     self.grid = GeoSpace()
 
     # Ultra Generalised Clipped otherwise too much rendering
-    boundaries, centroids, distances = _load_data()
+    boundaries, centroids, _distances = _load_data()
 
     # Set up the force agents
     factory = AgentCreator(ForceAreaAgent, {"model": self})
