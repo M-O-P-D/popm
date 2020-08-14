@@ -16,7 +16,7 @@ def _load_data():
   force_data = "./data/PFAs-VECTOR-NAMES-Basic-with-Core-with-Alliance.csv"
 
   gdf = gpd.read_file(geojson, crs={ "init": "epsg:4326" }) \
-    .drop(["OBJECTID", "BNG_E", "BNG_N"], axis=1) \
+    .drop(["OBJECTID"], axis=1) \
     .rename({"PFA16CD": "code", "PFA16NM": "name" }, axis=1)
 
   # length/area units are defined by the crs
@@ -38,6 +38,8 @@ def _load_data():
   boundaries = gpd.GeoDataFrame(gdf[['code', 'name', 'geometry', 'Officers', 'POP', 'Percentage', 'Core-function-1 ',
     'Core-function-2', 'Core-function-1-POP', 'Core-function-2-POP', 'Alliance']])
   # extract centroid data
+
+  # TODO the geojson contains latlong and BNG coords for centroids so could directly compute distances from east/northings (if simpler)
 
   # compute centroids and shift index so that agent ids arent duplicated
   # for now the centroids dont have the force data
@@ -63,7 +65,7 @@ class PublicOrderPolicing(Model):
   Source code at https://github.com/M-O-P-D/popm
   """
 
-  def __init__(self): #params...
+  def __init__(self, staff_attrition): #params...
 
     self.log = []
     self.datacollector = DataCollector(model_reporters={})
@@ -89,7 +91,7 @@ class PublicOrderPolicing(Model):
     for agent in force_area_agents:
       self.schedule.add(agent)
 
-    factory = AgentCreator(ForceCentroidAgent, {"model": self}) 
+    factory = AgentCreator(ForceCentroidAgent, {"model": self, "staff_attrition": staff_attrition}) 
     force_centroid_agents = factory.from_GeoDataFrame(centroids)
     self.grid.add_agents(force_centroid_agents) 
     for agent in force_centroid_agents:
