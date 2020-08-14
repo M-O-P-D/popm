@@ -1,7 +1,7 @@
 from .agents import *
 
 # Currently only color and radius properties are supported, see
-# mesa-geo/mesa_geo/visualization/templates/js/LeafletMap.js 
+# mesa-geo/mesa_geo/visualization/templates/js/LeafletMap.js
 
 def portray_map(agent):
   if isinstance(agent, ForceAreaAgent):
