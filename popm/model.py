@@ -1,19 +1,22 @@
 from mesa import Model
 from mesa.time import RandomActivation
 from mesa.datacollection import DataCollector
-from mesa_geo.geoagent import GeoAgent, AgentCreator
+from mesa_geo.geoagent import AgentCreator # GeoAgent
 from mesa_geo import GeoSpace
 
 import pandas as pd
 import geopandas as gpd
 import numpy as np
 
-from .agents import *
+from .agents import ForceAreaAgent, ForceCentroidAgent
 
 def _load_data():
-  # remove and rename columns 
+  # remove and rename columns
   geojson = "./data/force_boundaries_ugc.geojson"
   force_data = "./data/PFAs-VECTOR-NAMES-Basic-with-Core-with-Alliance.csv"
+  # From https://www.gov.uk/government/statistics/population-estimates
+  # TODO get hold of more recent data. 
+  population_data = "./data/population-police-force.csv"
 
   gdf = gpd.read_file(geojson, crs={ "init": "epsg:4326" }) \
     .drop(["OBJECTID"], axis=1) \
@@ -25,20 +28,28 @@ def _load_data():
   data = pd.read_csv(force_data) \
     .replace({"Metropolitan": "Metropolitan Police"}) \
     .rename({"Force": "name"}, axis=1)
+  # TODO what is POP in the above dataset? seems too low for population in 1000s
 
-  gdf = gdf.merge(data, on="name", how="left").fillna(0)
+  populations = pd.read_csv("./data/population-police-force.csv") \
+    .replace({"London, City of": "City of London"}) \
+    .rename({"Police Force": "name", "Mid 2010": "population"}, axis=1)[["name", "population"]]
+
+  gdf = gdf.merge(data, on="name", how="left").fillna(0).merge(populations, on="name")
 
   # NOTE warnings:
-  # pandas/core/generic.py:5155: UserWarning: Geometry is in a geographic CRS. Results from 'area' are likely incorrect. Use 'GeoSeries.to_crs()' 
-  # to re-project geometries to a projected CRS before this operation.  
-  # pyproj/crs/crs.py:53: FutureWarning: '+init=<authority>:<code>' syntax is deprecated. '<authority>:<code>' is the preferred initialization method. 
+  # pandas/core/generic.py:5155: UserWarning: Geometry is in a geographic CRS. Results from 'area' are likely incorrect. Use 'GeoSeries.to_crs()'
+  # to re-project geometries to a projected CRS before this operation.
+  # pyproj/crs/crs.py:53: FutureWarning: '+init=<authority>:<code>' syntax is deprecated. '<authority>:<code>' is the preferred initialization method.
   # When making the change, be mindful of axis order changes: https://pyproj4.github.io/pyproj/stable/gotchas.html#axis-order-changes-in-proj-6
 
   # extract boundary data
   boundaries = gpd.GeoDataFrame(gdf[['code', 'name', 'geometry', 'Officers', 'POP', 'Percentage', 'Core-function-1 ',
-    'Core-function-2', 'Core-function-1-POP', 'Core-function-2-POP', 'Alliance']])
-  # extract centroid data
+    'Core-function-2', 'Core-function-1-POP', 'Core-function-2-POP', 'Alliance', 'population']])
+  # add population estimate
+  # TODO this dataset is from 2010, needs more recent data
 
+
+  # extract centroid data
   # TODO the geojson contains latlong and BNG coords for centroids so could directly compute distances from east/northings (if simpler)
 
   # compute centroids and shift index so that agent ids arent duplicated
@@ -64,7 +75,6 @@ class PublicOrderPolicing(Model):
   An agent-based model of resource allocation in response to public order events.
   Source code at https://github.com/M-O-P-D/popm
   """
-
   def __init__(self, staff_attrition): #params...
 
     self.log = []
@@ -85,15 +95,15 @@ class PublicOrderPolicing(Model):
     boundaries, centroids, distances = _load_data()
 
     # Set up the force agents
-    factory = AgentCreator(ForceAreaAgent, {"model": self})   
+    factory = AgentCreator(ForceAreaAgent, {"model": self})
     force_area_agents = factory.from_GeoDataFrame(boundaries)
-    self.grid.add_agents(force_area_agents) 
+    self.grid.add_agents(force_area_agents)
     for agent in force_area_agents:
       self.schedule.add(agent)
 
-    factory = AgentCreator(ForceCentroidAgent, {"model": self, "staff_attrition": staff_attrition}) 
+    factory = AgentCreator(ForceCentroidAgent, {"model": self, "staff_attrition": staff_attrition})
     force_centroid_agents = factory.from_GeoDataFrame(centroids)
-    self.grid.add_agents(force_centroid_agents) 
+    self.grid.add_agents(force_centroid_agents)
     for agent in force_centroid_agents:
       self.schedule.add(agent)
 
