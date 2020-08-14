@@ -1,4 +1,4 @@
-from .agents import *
+from .agents import ForceAreaAgent, ForceCentroidAgent
 
 # Currently only color and radius properties are supported, see
 # mesa-geo/mesa_geo/visualization/templates/js/LeafletMap.js

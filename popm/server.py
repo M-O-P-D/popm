@@ -1,5 +1,4 @@
 from mesa_geo.visualization.ModularVisualization import ModularServer
-#from mesa.visualization.ModularVisualization import ModularServer
 #from mesa.visualization.modules import CanvasGrid, ChartModule
 from mesa.visualization.UserParam import UserSettableParameter
 
