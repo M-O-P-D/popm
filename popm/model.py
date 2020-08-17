@@ -28,13 +28,21 @@ def _load_data():
   data = pd.read_csv(force_data) \
     .replace({"Metropolitan": "Metropolitan Police"}) \
     .rename({"Force": "name"}, axis=1)
-  # TODO what is POP in the above dataset? seems too low for population in 1000s
+  # POP = Public Order (trained) Police
 
   populations = pd.read_csv(population_data) \
     .replace({"London, City of": "City of London"}) \
     .rename({"Police Force": "name", "MYE2018": "population", "SNHP2017": "households"}, axis=1)[["name", "population", "households"]]
 
   gdf = gdf.merge(data, on="name", how="left").fillna(0).merge(populations, on="name")
+
+  # ratio of police to people (hacks for missing data)
+  for i in [16,23,27]:
+    gdf.at[i, "Officers"] = 0.004 * gdf.at[i, "population"]
+
+  gdf["cops_per_pop"] = gdf.Officers / gdf.population 
+
+  print(gdf.cops_per_pop)
 
   # NOTE warnings:
   # pandas/core/generic.py:5155: UserWarning: Geometry is in a geographic CRS. Results from 'area' are likely incorrect. Use 'GeoSeries.to_crs()'
@@ -54,7 +62,7 @@ def _load_data():
 
   # compute centroids and shift index so that agent ids arent duplicated
   # for now the centroids dont have the force data
-  centroids = gpd.GeoDataFrame(gdf[["code", "name"]], geometry=gpd.points_from_xy(gdf.LONG, gdf.LAT), crs = {"init": "epsg:4326"})
+  centroids = gpd.GeoDataFrame(gdf[["code", "name", "cops_per_pop"]], geometry=gpd.points_from_xy(gdf.LONG, gdf.LAT), crs = {"init": "epsg:4326"})
   centroids.index += 100
 
   # compute distance matrix
@@ -121,7 +129,7 @@ class PublicOrderPolicing(Model):
     #self.datacollector.collect(self)
 
     # Halt the model
-    self.running=False
+    #self.running=False
 
 
 if __name__ == "__main__":
