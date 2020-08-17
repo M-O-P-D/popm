@@ -4,8 +4,8 @@ class LogElement(TextElement):
   def __init__(self):
 
     """ Create a new text logger element """
-    pass
 
+  @classmethod
   def render(self, model):
 
     """ log must be a string list """
