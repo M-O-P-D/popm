@@ -25,9 +25,9 @@ class ForceCentroidAgent(GeoAgent):
 
   def step(self):
     # riot start probability inversely proportional to cop density
-    p_activation = 0.00001 / self.cops_per_pop 
+    p_activation = 0.00001 / self.cops_per_pop
     # riot end probability proportional to cop density
-    p_deactivation = 1.3 * self.cops_per_pop
+    p_deactivation = 2.0 * self.cops_per_pop
     # note start and end events are independent
     if random.random() < p_activation:
       self.public_order_events = self.public_order_events + 1
@@ -39,8 +39,12 @@ class ForceCentroidAgent(GeoAgent):
   def colour(self):
     if self.public_order_events == 0:
       return "Green"
-    return "Red"    
-    
+    return "Red"
+
+  def size(self):
+    return str(1+self.public_order_events)
+
+
 
 # class PublicOrderEvent(GeoAgent):
 

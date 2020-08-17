@@ -37,10 +37,10 @@ def _load_data():
   gdf = gdf.merge(data, on="name", how="left").fillna(0).merge(populations, on="name")
 
   # ratio of police to people (hacks for missing data)
-  for i in [16,23,27]:
+  for i in [15,22,26]:
     gdf.at[i, "Officers"] = 0.004 * gdf.at[i, "population"]
 
-  gdf["cops_per_pop"] = gdf.Officers / gdf.population 
+  gdf["cops_per_pop"] = gdf.Officers / gdf.population
 
   print(gdf.cops_per_pop)
 
