@@ -14,9 +14,9 @@ def _load_data():
   # remove and rename columns
   geojson = "./data/force_boundaries_ugc.geojson"
   force_data = "./data/PFAs-VECTOR-NAMES-Basic-with-Core-with-Alliance.csv"
-  # From https://www.gov.uk/government/statistics/population-estimates
-  # TODO get hold of more recent data.
-  population_data = "./data/population-police-force.csv"
+  # From https://www.ons.gov.uk/peoplepopulationandcommunity/crimeandjustice/datasets/policeforceareadatatables
+  # 6/2019 is the latest complete dataset
+  population_data = "./data/population_data.csv"
 
   gdf = gpd.read_file(geojson, crs={ "init": "epsg:4326" }) \
     .drop(["OBJECTID"], axis=1) \
@@ -32,7 +32,7 @@ def _load_data():
 
   populations = pd.read_csv(population_data) \
     .replace({"London, City of": "City of London"}) \
-    .rename({"Police Force": "name", "Mid 2010": "population"}, axis=1)[["name", "population"]]
+    .rename({"Police Force": "name", "MYE2018": "population", "SNHP2017": "households"}, axis=1)[["name", "population", "households"]]
 
   gdf = gdf.merge(data, on="name", how="left").fillna(0).merge(populations, on="name")
 
@@ -44,7 +44,7 @@ def _load_data():
 
   # extract boundary data
   boundaries = gpd.GeoDataFrame(gdf[['code', 'name', 'geometry', 'Officers', 'POP', 'Percentage', 'Core-function-1 ',
-    'Core-function-2', 'Core-function-1-POP', 'Core-function-2-POP', 'Alliance', 'population']])
+    'Core-function-2', 'Core-function-1-POP', 'Core-function-2-POP', 'Alliance', 'population', 'households']])
   # add population estimate
   # TODO this dataset is from 2010, needs more recent data
 
