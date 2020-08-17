@@ -9,4 +9,4 @@ class LogElement(TextElement):
   def render(self, model):
 
     """ log must be a string list """
-    return "<pre>" + "\n".join(model.log) + "</pre>"
+    return "<pre>" + "\n".join(model.log[-3:]) + "</pre>"
