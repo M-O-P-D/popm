@@ -9,14 +9,41 @@ from .portrayal import portray_map
 from .model import PublicOrderPolicing
 
 model_params = {
-  "staff_attrition": UserSettableParameter(
+  "no_of_events": UserSettableParameter(
     "slider",
-    "Staff attrition rate (%)",
+    "No. of public order events",
+    3,
+    0,
+    50,
+    1,
+    description="The number of initial public order events"
+  ),
+  "event_resources": UserSettableParameter(
+    "slider",
+    "No. of officers required at each event",
+    1000,
+    0,
+    5000,
+    10,
+    description="No. of officers required at each event"
+  ),
+  "event_duration": UserSettableParameter(
+    "slider",
+    "Duration for which officers required at each event",
+    8,
+    0,
+    20,
+    10,
+    description="Duration for which officers required at each event"
+  ),
+  "staff_absence": UserSettableParameter(
+    "slider",
+    "Staff absence rate (%)",
     0,
     0,
     100,
     1,
-    description="The current staff attrition rate in percent"
+    description="The current staff absence rate in percent"
   )
 }
 
