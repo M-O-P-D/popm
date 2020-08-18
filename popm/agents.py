@@ -14,27 +14,22 @@ class ForceAreaAgent(GeoAgent):
 
 class ForceCentroidAgent(GeoAgent):
 
-  """ Agent representing a reference point in the force area to compute costs (distances) and count public order events within the force area """
-  def __init__(self, unique_id, model, shape, staff_attrition):
-    # staff_attrition is a global setting really, but I've inserted it here more as a how-to than a necessity
+  """ Agent representing a reference point in the force area to compute costs (distances) and track public order events within the force area """
+  def __init__(self, unique_id, model, shape): #, public_order_events, event_resources, event_duration):
+    # staff_absence is a global setting really, but I've inserted it here more as a how-to than a necessity
 
     super().__init__(unique_id, model, shape)
-    self.staff_attrition = staff_attrition
 
-    self.public_order_events = 0
+    self.public_order_events = 0 # TODO just use duration?
+    self.event_resources = 0
+    self.event_duration = 0
 
   def step(self):
-    # riot start probability inversely proportional to cop density
-    p_activation = 0.00001 / self.cops_per_pop
-    # riot end probability proportional to cop density
-    p_deactivation = 2.0 * self.cops_per_pop
-    # note start and end events are independent
-    if random.random() < p_activation:
-      self.public_order_events = self.public_order_events + 1
-      self.model.log.append("Riot started in %s" % self.name)
-    if random.random() < p_deactivation and self.public_order_events > 0:
-      self.public_order_events = self.public_order_events - 1
-      self.model.log.append("Riot ended in %s" % self.name)
+    if self.public_order_events > 0:
+      self.event_duration -= 1
+      if self.event_duration == 0:
+        self.public_order_events -= 1
+        self.model.log.append("Event ended in %s" % self.name)
 
   def colour(self):
     if self.public_order_events == 0:
@@ -43,8 +38,6 @@ class ForceCentroidAgent(GeoAgent):
 
   def size(self):
     return str(1+self.public_order_events)
-
-
 
 # class PublicOrderEvent(GeoAgent):
 

@@ -8,6 +8,8 @@ import pandas as pd
 import geopandas as gpd
 import numpy as np
 
+import random
+
 from .agents import ForceAreaAgent, ForceCentroidAgent
 
 def _load_data():
@@ -41,8 +43,6 @@ def _load_data():
     gdf.at[i, "Officers"] = 0.004 * gdf.at[i, "population"]
 
   gdf["cops_per_pop"] = gdf.Officers / gdf.population
-
-  print(gdf.cops_per_pop)
 
   # NOTE warnings:
   # pandas/core/generic.py:5155: UserWarning: Geometry is in a geographic CRS. Results from 'area' are likely incorrect. Use 'GeoSeries.to_crs()'
@@ -83,9 +83,10 @@ class PublicOrderPolicing(Model):
   An agent-based model of resource allocation in response to public order events.
   Source code at https://github.com/M-O-P-D/popm
   """
-  def __init__(self, staff_attrition): #params...
+  def __init__(self, no_of_events, event_resources, event_duration, staff_absence): #params...
 
-    self.log = []
+    self.log = ["Initialising model"]
+    
     self.datacollector = DataCollector(model_reporters={})
 
     # Set up the grid and schedule.
@@ -109,15 +110,25 @@ class PublicOrderPolicing(Model):
     for agent in force_area_agents:
       self.schedule.add(agent)
 
-    factory = AgentCreator(ForceCentroidAgent, {"model": self, "staff_attrition": staff_attrition})
+    factory = AgentCreator(ForceCentroidAgent, {"model": self})
     force_centroid_agents = factory.from_GeoDataFrame(centroids)
     self.grid.add_agents(force_centroid_agents)
+    # activate events as per parameters
+    active = random.sample(range(len(force_centroid_agents)), min(no_of_events, len(force_centroid_agents)))
+
+    for a in active:
+      self.log.append("Event started in %s" % force_centroid_agents[a].name)
+
+      force_centroid_agents[a].public_order_events = 1
+      force_centroid_agents[a].event_resources = event_resources
+      force_centroid_agents[a].event_duration = event_duration
+      print(force_centroid_agents[a])
+
     for agent in force_centroid_agents:
       self.schedule.add(agent)
-
-    self.log.append("Initialised model")
-    self.running = True
-    self.log.append("running=%s" % self.running)
+    
+    self.running = True # doesnt work
+    # self.log.append("running=%s" % self.running)
 
   def step(self):
     """
@@ -132,7 +143,7 @@ class PublicOrderPolicing(Model):
     #self.running=False
 
 
-if __name__ == "__main__":
-  (b,c) = _load_data()
-  print(b.head())
-  print(c.head())
+# if __name__ == "__main__":
+#   (b,c) = _load_data()
+#   print(b.head())
+#   print(c.head())
