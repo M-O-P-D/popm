@@ -6,13 +6,11 @@
 
 ![screenshot](./doc/screenshot.png)
 
-## Installation
-
-TODO...
-
 ## Developer Setup
 
-popm is written in python3. Use of a virtualenv or similar is recommended, but not essential.
+`popm` is written in python3. Use of a virtualenv or similar is recommended, but not essential. A [Dockerfile](./Dockerfile) is provided for containerisation and deployment.
+
+### Native
 
 Firstly, install dependencies
 
@@ -26,6 +24,20 @@ Then, run the server:
 mesa runserver .
 ```
 
+### Docker
+
+e.g.
+
+```bash
+docker build -t MOPD/popm .
+```
+
+to run on default http port:
+
+```bash
+docker run --rm -d -p 80:8521/tcp virgesmith/popm:latest
+```
+
 ### Troubleshooting
 
 If the dependencies don't install, giving errors like `undefined symbol: Error_GetLastErrorNum` it may be because `mesa-geo` package has an external (non-python) dependency on (e.g.) `libspatialindex-dev` which can be installed with e.g. apt.
@@ -37,3 +49,4 @@ TODO...
 ## Data Sources
 
 - Boundary data: [http://geoportal.statistics.gov.uk](http://geoportal.statistics.gov.uk/datasets/police-force-areas-december-2016-ultra-generalised-clipped-boundaries-in-england-and-wales-1?geometry=-22.401%2C48.023%2C18.117%2C57.305)
+- Population data (6/2019 is the latest complete dataset): [https://www.ons.gov.uk/peoplepopulationandcommunity/crimeandjustice/datasets/policeforceareadatatables](https://www.ons.gov.uk/peoplepopulationandcommunity/crimeandjustice/datasets/policeforceareadatatables)
