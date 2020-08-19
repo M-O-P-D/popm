@@ -37,6 +37,12 @@ to run on default http port:
 ```bash
 docker run --rm -d -p 80:8521/tcp virgesmith/popm:latest
 ```
+to push to the M.O.P.D repository:
+
+```bash
+docker push mopd/popm:latest
+```
+
 
 ### Troubleshooting
 
