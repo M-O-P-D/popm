@@ -12,6 +12,20 @@ class ForceAreaAgent(GeoAgent):
   def step(self):
     pass
 
+class ForcePSUAgent(GeoAgent):
+  def __init__(self, unique_id, model, shape):
+
+    super().__init__(unique_id, model, shape)
+
+  def step(self):
+    # TODO update position
+    pass
+
+  def colour(self):
+    return "Blue"
+
+
+
 class ForceCentroidAgent(GeoAgent):
 
   """ Agent representing a reference point in the force area to compute costs (distances) and track public order events within the force area """
@@ -21,7 +35,9 @@ class ForceCentroidAgent(GeoAgent):
     super().__init__(unique_id, model, shape)
 
     self.public_order_events = 0 # TODO just use duration?
-    self.event_resources = 0
+    self.event_resources_required = 0
+    self.event_resources_allocated = 0
+    self.event_resources_present = 0
     self.event_duration = 0
 
   def step(self):
@@ -33,7 +49,7 @@ class ForceCentroidAgent(GeoAgent):
 
   def colour(self):
     if self.public_order_events == 0:
-      return "Green"
+      return "Gray"
     return "Red"
 
   def size(self):

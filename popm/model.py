@@ -1,5 +1,5 @@
 from mesa import Model
-from mesa.time import RandomActivation
+from mesa.time import SimultaneousActivation
 from mesa.datacollection import DataCollector
 from mesa_geo.geoagent import AgentCreator # GeoAgent
 from mesa_geo import GeoSpace
@@ -8,74 +8,9 @@ import pandas as pd
 import geopandas as gpd
 import numpy as np
 
-import random
-
-from .agents import ForceAreaAgent, ForceCentroidAgent
-
-def _load_data():
-  # remove and rename columns
-  geojson = "./data/force_boundaries_ugc.geojson"
-  force_data = "./data/PFAs-VECTOR-NAMES-Basic-with-Core-with-Alliance.csv"
-  # From https://www.ons.gov.uk/peoplepopulationandcommunity/crimeandjustice/datasets/policeforceareadatatables
-  # 6/2019 is the latest complete dataset
-  population_data = "./data/population_data.csv"
-
-  gdf = gpd.read_file(geojson, crs={ "init": "epsg:4326" }) \
-    .drop(["OBJECTID"], axis=1) \
-    .rename({"PFA16CD": "code", "PFA16NM": "name" }, axis=1)
-
-  # length/area units are defined by the crs
-  # df.crs.axis_info[0].unit_name
-
-  data = pd.read_csv(force_data) \
-    .replace({"Metropolitan": "Metropolitan Police"}) \
-    .rename({"Force": "name"}, axis=1)
-  # POP = Public Order (trained) Police
-
-  populations = pd.read_csv(population_data) \
-    .replace({"London, City of": "City of London"}) \
-    .rename({"Police Force": "name", "MYE2018": "population", "SNHP2017": "households"}, axis=1)[["name", "population", "households"]]
-
-  gdf = gdf.merge(data, on="name", how="left").fillna(0).merge(populations, on="name")
-
-  # ratio of police to people (hacks for missing data)
-  for i in [15,22,26]:
-    gdf.at[i, "Officers"] = 0.004 * gdf.at[i, "population"]
-
-  gdf["cops_per_pop"] = gdf.Officers / gdf.population
-
-  # NOTE warnings:
-  # pandas/core/generic.py:5155: UserWarning: Geometry is in a geographic CRS. Results from 'area' are likely incorrect. Use 'GeoSeries.to_crs()'
-  # to re-project geometries to a projected CRS before this operation.
-  # pyproj/crs/crs.py:53: FutureWarning: '+init=<authority>:<code>' syntax is deprecated. '<authority>:<code>' is the preferred initialization method.
-  # When making the change, be mindful of axis order changes: https://pyproj4.github.io/pyproj/stable/gotchas.html#axis-order-changes-in-proj-6
-
-  # extract boundary data
-  boundaries = gpd.GeoDataFrame(gdf[['code', 'name', 'geometry', 'Officers', 'POP', 'Percentage', 'Core-function-1 ',
-    'Core-function-2', 'Core-function-1-POP', 'Core-function-2-POP', 'Alliance', 'population', 'households']])
-  # add population estimate
-  # TODO this dataset is from 2010, needs more recent data
-
-
-  # extract centroid data
-  # TODO the geojson contains latlong and BNG coords for centroids so could directly compute distances from east/northings (if simpler)
-
-  # compute centroids and shift index so that agent ids arent duplicated
-  # for now the centroids dont have the force data
-  centroids = gpd.GeoDataFrame(gdf[["code", "name", "cops_per_pop"]], geometry=gpd.points_from_xy(gdf.LONG, gdf.LAT), crs = {"init": "epsg:4326"})
-  centroids.index += 100
-
-  # compute distance matrix
-  # convert to different projection for distance computation
-  # see https://gis.stackexchange.com/questions/293310/how-to-use-geoseries-distance-to-get-the-right-answer
-  # index offset by 100 needs to be reset for loop below to work
-  c = centroids.to_crs(epsg=3310).reset_index(drop=True)
-  m = np.zeros((len(c), len(c)))
-  for i in range(len(c)):
-    m[i,:] = c.distance(c.geometry[i]) / 1000.0
-  distances = pd.DataFrame(m, columns=c.name, index=c.name)
-
-  return boundaries, centroids, distances
+from .agents import ForceAreaAgent, ForceCentroidAgent, ForcePSUAgent
+from .initialisation import load_data, create_psu_data, initialise_events
+from .negotiation import allocate
 
 class PublicOrderPolicing(Model):
   # below ends up in the "About" menu
@@ -86,7 +21,7 @@ class PublicOrderPolicing(Model):
   def __init__(self, no_of_events, event_resources, event_duration, staff_absence): #params...
 
     self.log = ["Initialising model"]
-    
+
     self.datacollector = DataCollector(model_reporters={})
 
     # Set up the grid and schedule.
@@ -95,13 +30,16 @@ class PublicOrderPolicing(Model):
     # computing their next state simultaneously.  This needs to
     # be done because each cell's next state depends on the current
     # state of all its neighbors -- before they've changed.
-    self.schedule = RandomActivation(self)
+    self.schedule = SimultaneousActivation(self)
 
     # Use a multi grid so that >1 agent can occupy the same location
     self.grid = GeoSpace()
 
     # Ultra Generalised Clipped otherwise too much rendering
-    boundaries, centroids, _distances = _load_data()
+    boundaries, centroids, _distances = load_data()
+
+    # create PSUs
+    psu_data = create_psu_data(boundaries, centroids, staff_absence)
 
     # Set up the force agents
     factory = AgentCreator(ForceAreaAgent, {"model": self})
@@ -113,20 +51,19 @@ class PublicOrderPolicing(Model):
     factory = AgentCreator(ForceCentroidAgent, {"model": self})
     force_centroid_agents = factory.from_GeoDataFrame(centroids)
     self.grid.add_agents(force_centroid_agents)
-    # activate events as per parameters
-    active = random.sample(range(len(force_centroid_agents)), min(no_of_events, len(force_centroid_agents)))
 
-    for a in active:
-      self.log.append("Event started in %s" % force_centroid_agents[a].name)
+    # factory = AgentCreator(ForcePSUAgent, { "model": self})
+    # force_psu_agents = factory.from_GeoDataFrame(psu_data)
+    # self.grid.add_agents(force_psu_agents)
 
-      force_centroid_agents[a].public_order_events = 1
-      force_centroid_agents[a].event_resources = event_resources
-      force_centroid_agents[a].event_duration = event_duration
-      print(force_centroid_agents[a])
+    active = initialise_events(no_of_events, event_resources, event_duration, force_centroid_agents)
+    self.log.append("Events started in %s" % [force_centroid_agents[a].name for a in active])
+
+    allocate(active, force_area_agents, force_centroid_agents)
 
     for agent in force_centroid_agents:
       self.schedule.add(agent)
-    
+
     self.running = True # doesnt work
     # self.log.append("running=%s" % self.running)
 
