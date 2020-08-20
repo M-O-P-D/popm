@@ -6,7 +6,6 @@ class LogElement(TextElement):
     """ Create a new text logger element """
 
   @classmethod
-  def render(self, model):
-
+  def render(_, model):
     """ log must be a string list """
     return "<pre>" + "\n".join(model.log[-3:]) + "</pre>"

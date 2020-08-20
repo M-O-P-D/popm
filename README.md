@@ -6,9 +6,17 @@
 
 ![screenshot](./doc/screenshot.png)
 
+## Status
+
+- [X] Initialise available PSUs in each area according to available resources and limits
+- [X] Allocate PSUs within event's force area
+- [ ] Allocate PSUs as necessary from other force areas within alliance
+- [ ] Allocate PSUs if necessary from force areas outside alliance
+- [ ] Move PSUs to events
+
 ## Developer Setup
 
-`popm` is written in python3. Use of a virtualenv or similar is recommended, but not essential. A [Dockerfile](./Dockerfile) is provided for containerisation and deployment.
+`popm` is written in python3 and uses the [mesa](https://mesa.readthedocs.io/en/master/) ABM framework with the [mesa-geo](https://github.com/Corvince/mesa-geo) mapping extension. Use of a virtualenv or similar is recommended, but not essential. A [Dockerfile](./Dockerfile) is provided for containerisation and deployment.
 
 ### Native
 
@@ -37,12 +45,12 @@ to run on default http port:
 ```bash
 docker run --rm -d -p 80:8521/tcp virgesmith/popm:latest
 ```
-to push to the M.O.P.D repository:
+
+to push to the M.O.P.D. repository:
 
 ```bash
 docker push mopd/popm:latest
 ```
-
 
 ### Troubleshooting
 
