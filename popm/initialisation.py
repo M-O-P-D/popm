@@ -5,6 +5,7 @@ import geopandas as gpd
 
 import random
 
+from shapely.geometry import Point
 
 def load_data():
 
@@ -91,9 +92,7 @@ def create_psu_data(boundaries, centroids, staff_absence):
   boundaries["available_psus"] = np.floor((f1_avail + f2_avail) / 25).astype(int)
   boundaries["dispatched_psus"] = 0
 
-  print(boundaries)
-
-  psu_data = centroids[["name", "code", "Alliance", "geometry"]]
+  psu_data = boundaries[["name", "code", "Alliance", "geometry"]]
   for _, r in boundaries.iterrows():
     n = r.available_psus
     name = boundaries.name[r.name] # no idea why r.name is a number not a string
@@ -105,8 +104,19 @@ def create_psu_data(boundaries, centroids, staff_absence):
     # check we have the right number
     assert len(psu_data[psu_data.name == name]) == n
 
+  # now covert geometry from the force area polygon to a random point in it
+  for i, r in psu_data.iterrows():
+    min_x, min_y, max_x, max_y = r.geometry.bounds
+
+    while True:
+      random_point = Point([random.uniform(min_x, max_x), random.uniform(min_y, max_y)])
+      if random_point.within(r.geometry):
+        psu_data.at[i, "geometry"] = random_point
+        break
+
   psu_data["dispatched_to"] = ""
   psu_data["deployed"] = False
+  psu_data.index += 1000 # ensure unique
 
   return psu_data
 

@@ -52,14 +52,14 @@ class PublicOrderPolicing(Model):
     force_centroid_agents = factory.from_GeoDataFrame(centroids)
     self.grid.add_agents(force_centroid_agents)
 
-    # factory = AgentCreator(ForcePSUAgent, { "model": self})
-    # force_psu_agents = factory.from_GeoDataFrame(psu_data)
-    # self.grid.add_agents(force_psu_agents)
+    factory = AgentCreator(ForcePSUAgent, { "model": self})
+    force_psu_agents = factory.from_GeoDataFrame(psu_data)
+    self.grid.add_agents(force_psu_agents)
 
     active = initialise_events(no_of_events, event_resources, event_duration, force_centroid_agents)
     self.log.append("Events started in %s" % [force_centroid_agents[a].name for a in active])
 
-    allocate(active, force_area_agents, force_centroid_agents)
+    allocate(active, force_area_agents, force_centroid_agents, force_psu_agents)
 
     for agent in force_centroid_agents:
       self.schedule.add(agent)

@@ -1,6 +1,8 @@
 from mesa_geo.geoagent import GeoAgent
 
-import random
+#import random
+
+import inspect
 
 class ForceAreaAgent(GeoAgent):
 
@@ -9,8 +11,17 @@ class ForceAreaAgent(GeoAgent):
 
     super().__init__(unique_id, model, shape)
 
+    #self.available_psus = 0
+
   def step(self):
     pass
+
+  def render(self):
+    if self.available_psus > 0:
+      return { }
+    else:
+      return { "color": "Gray" }
+
 
 class ForcePSUAgent(GeoAgent):
   def __init__(self, unique_id, model, shape):
@@ -21,8 +32,8 @@ class ForcePSUAgent(GeoAgent):
     # TODO update position
     pass
 
-  def colour(self):
-    return "Blue"
+  def render(self):
+    return { "color": "Orange" if self.deployed else "Blue", "radius": "1" }
 
 
 
@@ -47,13 +58,11 @@ class ForceCentroidAgent(GeoAgent):
         self.public_order_events -= 1
         self.model.log.append("Event ended in %s" % self.name)
 
-  def colour(self):
-    if self.public_order_events == 0:
-      return "Gray"
-    return "Red"
+  def render(self):
+    if self.public_order_events > 0:
+      return { "radius": 3 + self.public_order_events, "color": "Red" }
+    return {}
 
-  def size(self):
-    return str(1+self.public_order_events)
 
 # class PublicOrderEvent(GeoAgent):
 
