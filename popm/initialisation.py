@@ -6,6 +6,7 @@ import geopandas as gpd
 import random
 
 from shapely.geometry import Point
+from shapely.ops import cascaded_union
 
 def load_data():
 
@@ -20,7 +21,16 @@ def load_data():
 
   gdf = gpd.read_file(geojson, crs={ "init": "epsg:4326" }) \
     .drop(["OBJECTID"], axis=1) \
-    .rename({"PFA16CD": "code", "PFA16NM": "name" }, axis=1)
+    .rename({"PFA16CD": "code", "PFA16NM": "name" }, axis=1) \
+    .set_index("code", drop=True)
+
+  # Merge: W.Midlands+W.Mercia and Beds+Cambs+Beds+Herts
+  gdf.at["E23000014", "geometry"] = cascaded_union([gdf.at["E23000014", "geometry"], gdf.at["E23000016", "geometry"]])
+  gdf.at["E23000026", "geometry"] = cascaded_union([gdf.at["E23000023", "geometry"], gdf.at["E23000026", "geometry"], gdf.at["E23000027", "geometry"]])
+  gdf.drop(["E23000016", "E23000023", "E23000027"], inplace=True)
+  # breaks some later merge
+  #gdf.at["E23000014", "name"] = "W Midlands & W Mercia"
+  #gdf.at["E23000014", "name"] = "Beds, Cambs & Herts"
 
   # length/area units are defined by the crs
   # df.crs.axis_info[0].unit_name
@@ -41,11 +51,12 @@ def load_data():
 
   gdf = gdf.merge(data, on="name", how="left").fillna(0).merge(populations, on="name")
 
-  # ratio of police to people (hacks for missing data)
-  for i in [15,22,26]:
-    gdf.at[i, "Officers"] = 0.004 * gdf.at[i, "population"]
+  # # ratio of police to people (hacks for missing data)
+  # for i in [15,22,26]:
+  #   gdf.at[i, "Officers"] = 0.004 * gdf.at[i, "population"]
 
-  gdf["cops_per_pop"] = gdf.Officers / gdf.population
+  # TODO this will be wrong for merged
+  #gdf["cops_per_pop"] = gdf.Officers / gdf.population
 
   # NOTE warnings:
   # pandas/core/generic.py:5155: UserWarning: Geometry is in a geographic CRS. Results from 'area' are likely incorrect. Use 'GeoSeries.to_crs()'
@@ -54,7 +65,7 @@ def load_data():
   # When making the change, be mindful of axis order changes: https://pyproj4.github.io/pyproj/stable/gotchas.html#axis-order-changes-in-proj-6
 
   # extract boundary data
-  boundaries = gpd.GeoDataFrame(gdf[['code', 'name', 'geometry', 'Officers', 'POP', 'Percentage', 'core_function1',
+  boundaries = gpd.GeoDataFrame(gdf[['name', 'geometry', 'Officers', 'POP', 'Percentage', 'core_function1',
     'core_function2', 'core_function1_pop', 'core_function2_pop', 'Alliance', 'population', 'households']])
 
   # extract centroid data
@@ -62,7 +73,7 @@ def load_data():
 
   # compute centroids and shift index so that agent ids arent duplicated
   # for now the centroids dont have the force data
-  centroids = gpd.GeoDataFrame(gdf[["code", "name", "Alliance", "cops_per_pop"]], geometry=gpd.points_from_xy(gdf.LONG, gdf.LAT), crs = {"init": "epsg:4326"})
+  centroids = gpd.GeoDataFrame(gdf[["name", "Alliance"]], geometry=gpd.points_from_xy(gdf.LONG, gdf.LAT), crs = {"init": "epsg:4326"})
   centroids.index += 100
 
   # compute distance matrix
@@ -92,7 +103,7 @@ def create_psu_data(boundaries, centroids, staff_absence):
   boundaries["available_psus"] = np.floor((f1_avail + f2_avail) / 25).astype(int)
   boundaries["dispatched_psus"] = 0
 
-  psu_data = boundaries[["name", "code", "Alliance", "geometry"]]
+  psu_data = boundaries[["name", "Alliance", "geometry"]]
   for _, r in boundaries.iterrows():
     n = r.available_psus
     name = boundaries.name[r.name] # no idea why r.name is a number not a string

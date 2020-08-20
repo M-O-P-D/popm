@@ -1,9 +1,5 @@
 from mesa_geo.geoagent import GeoAgent
 
-#import random
-
-import inspect
-
 class ForceAreaAgent(GeoAgent):
 
   """ Agent representing a police force area """
