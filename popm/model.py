@@ -18,7 +18,7 @@ class PublicOrderPolicing(Model):
   An agent-based model of resource allocation in response to public order events.
   Source code at https://github.com/M-O-P-D/popm
   """
-  def __init__(self, no_of_events, event_resources, event_duration, staff_absence): #params...
+  def __init__(self, no_of_events, event_resources, event_duration, staff_absence, seed=None): #params...
 
     self.log = ["Initialising model"]
 
@@ -36,7 +36,7 @@ class PublicOrderPolicing(Model):
     self.grid = GeoSpace()
 
     # Ultra Generalised Clipped otherwise too much rendering
-    boundaries, centroids, _distances = load_data()
+    boundaries, centroids, distances = load_data()
 
     # create PSUs
     psu_data = create_psu_data(boundaries, centroids, staff_absence)
@@ -59,7 +59,7 @@ class PublicOrderPolicing(Model):
     active = initialise_events(no_of_events, event_resources, event_duration, force_centroid_agents)
     self.log.append("Events started in %s" % [force_centroid_agents[a].name for a in active])
 
-    allocate(active, force_area_agents, force_centroid_agents, force_psu_agents)
+    allocate(active, force_area_agents, force_centroid_agents, force_psu_agents, distances, event_duration, self.log)
 
     for agent in force_centroid_agents:
       self.schedule.add(agent)
@@ -71,13 +71,7 @@ class PublicOrderPolicing(Model):
     """
     Have the scheduler advance each cell by one step
     """
-    # self.log.append("stepping")
-    # self.log = self.log[-3:]
     self.schedule.step()
-    #self.datacollector.collect(self)
-
-    # Halt the model
-    #self.running=False
 
 
 # if __name__ == "__main__":

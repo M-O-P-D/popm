@@ -8,6 +8,8 @@ import random
 from shapely.geometry import Point
 from shapely.ops import cascaded_union
 
+PSU_OFFICERS = 25
+
 def load_data():
 
   # TODO use code as index?
@@ -100,7 +102,7 @@ def create_psu_data(boundaries, centroids, staff_absence):
   f1_avail = np.minimum(boundaries.core_function1_pop * presence, np.maximum(0, boundaries.core_function1 * presence - 200))
   f2_avail = np.minimum(boundaries.core_function2_pop * presence, np.maximum(0, boundaries.core_function2 * presence - 200))
 
-  boundaries["available_psus"] = np.floor((f1_avail + f2_avail) / 25).astype(int)
+  boundaries["available_psus"] = np.floor((f1_avail + f2_avail) / PSU_OFFICERS).astype(int)
   boundaries["dispatched_psus"] = 0
 
   psu_data = boundaries[["name", "Alliance", "geometry"]]
