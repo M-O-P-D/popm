@@ -12,8 +12,6 @@ PSU_OFFICERS = 25
 
 def load_data():
 
-  # TODO use code as index?
-
   # remove and rename columns
   geojson = "./data/force_boundaries_ugc.geojson"
   force_data = "./data/PFAs-VECTOR-NAMES-Basic-with-Core-with-Alliance.csv"
@@ -30,15 +28,16 @@ def load_data():
   gdf.at["E23000014", "geometry"] = cascaded_union([gdf.at["E23000014", "geometry"], gdf.at["E23000016", "geometry"]])
   gdf.at["E23000026", "geometry"] = cascaded_union([gdf.at["E23000023", "geometry"], gdf.at["E23000026", "geometry"], gdf.at["E23000027", "geometry"]])
   gdf.drop(["E23000016", "E23000023", "E23000027"], inplace=True)
-  # breaks some later merge
-  #gdf.at["E23000014", "name"] = "W Midlands & W Mercia"
-  #gdf.at["E23000014", "name"] = "Beds, Cambs & Herts"
+  gdf.at["E23000014", "name"] = "W Midlands W Mercia"
+  gdf.at["E23000026", "name"] = "Beds Cambs Herts"
 
   # length/area units are defined by the crs
   # df.crs.axis_info[0].unit_name
 
   data = pd.read_csv(force_data) \
-    .replace({"Metropolitan": "Metropolitan Police"}) \
+    .replace({"Metropolitan": "Metropolitan Police",
+              "Bedfordshire": "Beds Cambs Herts",
+              "West Midlands": "W Midlands W Mercia"}) \
     .rename({"Force": "name",
              "Core-function-1 ": "core_function1",
              "Core-function-2": "core_function2",
@@ -51,7 +50,7 @@ def load_data():
     .replace({"London, City of": "City of London"}) \
     .rename({"Police Force": "name", "MYE2018": "population", "SNHP2017": "households"}, axis=1)[["name", "population", "households"]]
 
-  gdf = gdf.merge(data, on="name", how="left").fillna(0).merge(populations, on="name")
+  gdf = gdf.merge(data, on="name", how="left", left_index=True).fillna(0).merge(populations, on="name")
 
   # # ratio of police to people (hacks for missing data)
   # for i in [15,22,26]:
