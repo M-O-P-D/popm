@@ -4,10 +4,6 @@ from mesa.datacollection import DataCollector
 from mesa_geo.geoagent import AgentCreator # GeoAgent
 from mesa_geo import GeoSpace
 
-import pandas as pd
-import geopandas as gpd
-import numpy as np
-
 from .agents import ForceAreaAgent, ForceCentroidAgent, ForcePSUAgent
 from .initialisation import load_data, create_psu_data, initialise_events
 from .negotiation import allocate

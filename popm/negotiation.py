@@ -98,12 +98,3 @@ def allocate(active, force_area_agents, force_centroid_agents, force_psu_agents,
           f.dispatched_psus += 1
           allocated += 1
         if allocated > 0: log.append("%d PSUs allocated from %s to %s (rank=%f)" % (allocated, f.name, force_area_agents[a].name, r[1]))
-
-    # # return any unresourced 
-    # return req
-    # if req > 0:
-    #   print("Event in %s is underresouced" % force_centroid_agents[a].name)
-    # else 
-      #print(ranks)
-
-    #print(force_centroid_agents[a].name, force_centroid_agents[a].Alliance, [f.name for f in forces])

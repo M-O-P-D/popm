@@ -10,9 +10,11 @@
 
 - [X] Initialise available PSUs in each area according to available resources and limits
 - [X] Allocate PSUs within event's force area
-- [ ] Allocate PSUs as necessary from other force areas within alliance
-- [ ] Allocate PSUs if necessary from force areas outside alliance
+- [X] Allocate PSUs as necessary from other force areas within alliance
+- [X] Allocate PSUs if necessary from force areas outside alliance
 - [ ] Move PSUs to events
+
+Deployed [here](https://popm.azurewebsites.net)
 
 ## Developer Setup
 
