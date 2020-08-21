@@ -8,4 +8,4 @@ class LogElement(TextElement):
   @classmethod
   def render(_, model):
     """ log must be a string list """
-    return "<pre>" + "\n".join(model.log[-3:]) + "</pre>"
+    return "<pre>" + "\n".join(model.log[-8:]) + "</pre>"

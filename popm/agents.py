@@ -56,7 +56,7 @@ class ForceCentroidAgent(GeoAgent):
 
   def render(self):
     if self.public_order_events > 0:
-      return { "radius": 3 + self.public_order_events, "color": "Red" }
+      return { "radius": 3 + self.public_order_events, "color": "Red" if self.event_resources_allocated < self.event_resources_required else "Black"}
     return {}
 
 

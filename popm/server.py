@@ -29,12 +29,12 @@ model_params = {
   ),
   "event_duration": UserSettableParameter(
     "slider",
-    "Duration for which officers required at each event",
+    "Duration of event",
     8,
     0,
     20,
-    10,
-    description="Duration for which officers required at each event"
+    1,
+    description="Duration of event, shorter events require faster responses"
   ),
   "staff_absence": UserSettableParameter(
     "slider",
@@ -44,7 +44,8 @@ model_params = {
     100,
     1,
     description="The current staff absence rate in percent"
-  )
+  ),
+  "seed": 19937
 }
 
 # Make a world that is 50x50, on a 250x250 display.
