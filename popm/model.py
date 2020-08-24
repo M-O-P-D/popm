@@ -60,6 +60,10 @@ class PublicOrderPolicing(Model):
     for agent in force_centroid_agents:
       self.schedule.add(agent)
 
+    for agent in force_psu_agents:
+      self.schedule.add(agent)
+
+
     self.running = True # doesnt work
     # self.log.append("running=%s" % self.running)
 

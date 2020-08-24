@@ -125,16 +125,14 @@ def create_psu_data(boundaries, centroids, staff_absence):
     single_psu_data = psu_data[psu_data.name == name]
 
     rows = ceil(sqrt(len(single_psu_data)))
-    print(name, rows)
     j = 0
     for idx, r in single_psu_data.iterrows():
 
-      # r.name is numeric and r["name"] is string for some reason 
+      # r.name is numeric and r["name"] is string for some reason
       p = centroids[centroids.name == name].geometry.values[0]
 
       x = p.x - rows * dx / 2
       y = p.y - rows * dy / 2
-
 
       # # NB // is integer division
       psu_data.at[idx, "geometry"] = Point([x + j // rows * dx, y + j % rows * dy])

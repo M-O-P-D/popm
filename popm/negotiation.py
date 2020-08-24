@@ -30,12 +30,13 @@ def rank(forces, name, distances, event_duration):
       ranks.append((f.name, f.available_psus / despatch_time))
   return sorted(ranks, key=lambda t: -t[1])
 
-def mark_psu_dispatched(force_name, event_location, psu_agents):
-  avail = [a for a in psu_agents if a.name == force_name and a.deployed == False]
+def mark_psu_dispatched(force_name, event_location, event_point, psu_agents, deploy_immediately=False):
+  avail = [a for a in psu_agents if a.name == force_name and a.dispatched_to == ""]
   if len(avail) == 0:
     raise ValueError("no psu available for dispatch from %s to %s" % (force_name, event_location))
-  avail[0].deployed = True
+  avail[0].deployed = deploy_immediately
   avail[0].dispatched_to = event_location
+  avail[0].dest = (event_point.x, event_point.y)
 
 def allocate(active, force_area_agents, force_centroid_agents, force_psu_agents, distances, event_duration, log):
 
@@ -50,7 +51,7 @@ def allocate(active, force_area_agents, force_centroid_agents, force_psu_agents,
 
     allocated = 0
     while req > 0 and force_area_agents[a].available_psus > 0:
-      mark_psu_dispatched(f.name, f.name, force_psu_agents)
+      mark_psu_dispatched(f.name, f.name, force_centroid_agents[a].shape, force_psu_agents, deploy_immediately=True) # already in right place
       req -= PSU_OFFICERS
       force_centroid_agents[a].event_resources_allocated += PSU_OFFICERS
       # in-force are automatically present
@@ -68,13 +69,12 @@ def allocate(active, force_area_agents, force_centroid_agents, force_psu_agents,
     # if not fully resourced, request from alliance member
     if req > 0:
       forces = find_other_forces(force_area_agents, force_centroid_agents[a].name, force_centroid_agents[a].Alliance)
-      #print(force_centroid_agents[a].name, force_centroid_agents[a].Alliance, [f.name for f in forces])
       ranks = rank(forces, force_centroid_agents[a].name, distances, event_duration)
       for r in ranks:
         f = find_force(force_area_agents, r[0])
         allocated = 0
         while req > 0 and f.available_psus > 0:
-          mark_psu_dispatched(f.name, force_centroid_agents[a].name, force_psu_agents)
+          mark_psu_dispatched(f.name, force_centroid_agents[a].name, force_centroid_agents[a].shape, force_psu_agents)
           req -= PSU_OFFICERS
           force_centroid_agents[a].event_resources_allocated += PSU_OFFICERS
           f.available_psus -= 1
@@ -91,7 +91,7 @@ def allocate(active, force_area_agents, force_centroid_agents, force_psu_agents,
         f = find_force(force_area_agents, r[0])
         allocated = 0
         while req > 0 and f.available_psus > 0:
-          mark_psu_dispatched(f.name, force_centroid_agents[a].name, force_psu_agents)
+          mark_psu_dispatched(f.name, force_centroid_agents[a].name, force_centroid_agents[a].shape, force_psu_agents)
           req -= PSU_OFFICERS
           force_centroid_agents[a].event_resources_allocated += PSU_OFFICERS
           f.available_psus -= 1
