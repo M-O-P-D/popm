@@ -4,6 +4,7 @@ import pandas as pd
 import geopandas as gpd
 
 import random
+from math import ceil, sqrt
 
 from shapely.geometry import Point
 from shapely.ops import cascaded_union
@@ -116,15 +117,34 @@ def create_psu_data(boundaries, centroids, staff_absence):
     # check we have the right number
     assert len(psu_data[psu_data.name == name]) == n
 
-  # now covert geometry from the force area polygon to a random point in it
-  for i, r in psu_data.iterrows():
-    min_x, min_y, max_x, max_y = r.geometry.bounds
+  # now covert geometry from the force area polygon a unique offset from the centroid
+  for name in boundaries.name:
 
-    while True:
-      random_point = Point([random.uniform(min_x, max_x), random.uniform(min_y, max_y)])
-      if random_point.within(r.geometry):
-        psu_data.at[i, "geometry"] = random_point
-        break
+    dx = 0.02
+    dy = 0.01
+    single_psu_data = psu_data[psu_data.name == name]
+
+    rows = ceil(sqrt(len(single_psu_data)))
+    print(name, rows)
+    j = 0
+    for idx, r in single_psu_data.iterrows():
+
+      # r.name is numeric and r["name"] is string for some reason 
+      p = centroids[centroids.name == name].geometry.values[0]
+
+      x = p.x - rows * dx / 2
+      y = p.y - rows * dy / 2
+
+
+      # # NB // is integer division
+      psu_data.at[idx, "geometry"] = Point([x + j // rows * dx, y + j % rows * dy])
+      j = j + 1
+
+      # while True:
+      #   random_point = Point([random.uniform(min_x, max_x), random.uniform(min_y, max_y)])
+      #   if random_point.within(r.geometry):
+      #     psu_data.at[i, "geometry"] = random_point
+      #     break
 
   psu_data["dispatched_to"] = ""
   psu_data["deployed"] = False
@@ -135,6 +155,8 @@ def create_psu_data(boundaries, centroids, staff_absence):
 
 def initialise_events(no_of_events, event_resources, event_duration, force_centroid_agents):
   # activate events as per parameters
+  # TODO use only Model RNG for reproducibility
+  random.seed(19937)
   active = random.sample(range(len(force_centroid_agents)), min(no_of_events, len(force_centroid_agents)))
 
   for a in active:
