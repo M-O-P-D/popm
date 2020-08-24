@@ -12,9 +12,10 @@
 - [X] Allocate PSUs within event's force area
 - [X] Allocate PSUs as necessary from other force areas within alliance
 - [X] Allocate PSUs if necessary from force areas outside alliance
-- [ ] Move PSUs to events
+- [X] Move PSUs to events
+- [ ] Return PSUs when events over
 
-Deployed [here](https://popm.azurewebsites.net)
+popm is deployed as an app service [here](https://popm.azurewebsites.net)
 
 ## Developer Setup
 
