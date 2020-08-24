@@ -1,5 +1,22 @@
 from mesa_geo.geoagent import GeoAgent
 
+from shapely.geometry import Point
+
+from math import atan2, sin, cos
+
+def _move_towards(pos, dest, speed):
+  dist2 = (pos.x - dest[0])**2 + (pos.y - dest[1])**2
+  # >= 1 steps away
+  if dist2 < speed*speed:
+    # better displayed near rather than on?
+    #return pos
+    return Point([dest[0], dest[1]])
+  # avoids potential div0, but is there a more efficient approach
+  angle = atan2(dest[1] - pos.y, dest[0] - pos.x)
+  x = pos.x + speed * cos(angle)
+  y = pos.y + speed * sin(angle)
+  return Point([x, y])
+
 class ForceAreaAgent(GeoAgent):
 
   """ Agent representing a police force area """
@@ -12,6 +29,7 @@ class ForceAreaAgent(GeoAgent):
   def step(self):
     pass
 
+
   def render(self):
     if self.available_psus > 0:
       return { }
@@ -20,16 +38,32 @@ class ForceAreaAgent(GeoAgent):
 
 
 class ForcePSUAgent(GeoAgent):
+
+  # TODO define elswhere?
+  SPEED = 50000 # m/timestep
+
   def __init__(self, unique_id, model, shape):
 
     super().__init__(unique_id, model, shape)
 
+    # TODO use this not the string dispatched_to
+    self.dest = None
+
   def step(self):
-    # TODO update position
-    pass
+    # if en route, move
+    if self.dispatched_to != "" and not self.deployed:
+      self.shape = _move_towards(self.shape, self.dest, ForcePSUAgent.SPEED)
+
+    # if event finished, move back
 
   def render(self):
-    return { "color": "Orange" if self.deployed else "Blue", "radius": "1" }
+    colour = "Blue"
+    if self.dispatched_to != "":
+      if self.deployed:
+        colour = "Red"
+      else:
+        colour = "Orange"
+    return { "color": colour, "radius": "1" }
 
 
 
