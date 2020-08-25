@@ -31,10 +31,12 @@ class ForceAreaAgent(GeoAgent):
 
 
   def render(self):
-    if self.available_psus > 0:
+    if self.dispatched_psus == 0:
       return { }
+    elif self.available_psus > 0:
+      return { "color": "#BFBFBF" }
     else:
-      return { "color": "Gray" }
+      return { "color": "#9F9F9F" }
 
 
 class ForcePSUAgent(GeoAgent):
@@ -77,7 +79,7 @@ class ForceCentroidAgent(GeoAgent):
 
     self.public_order_events = 0 # TODO just use duration?
     self.event_resources_required = 0
-    self.event_resources_allocated = 0
+    self.event_resources_allocated = 0 
     self.event_resources_present = 0
     self.event_duration = 0
 
