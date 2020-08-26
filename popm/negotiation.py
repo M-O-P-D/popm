@@ -37,8 +37,8 @@ def mark_psu_dispatched(force_name, event_location, event_point, psu_agents, dep
     raise ValueError("no psu available for dispatch from %s to %s" % (force_name, event_location))
   avail[0].deployed = deploy_immediately
   avail[0].dispatched_to = event_location
-  # use tuple to avoid TypeError: Object of type Point is not JSON serializable
-  avail[0].dest = (event_point.x, event_point.y)
+  # use wkt string to avoid TypeError: Object of type Point is not JSON serializable
+  avail[0].dest = event_point.wkt
 
 def allocate(event_agents, force_agents, psu_agents, distances, log):
   # ensure we allocate in-location first (to stop resources being taken by other areas)

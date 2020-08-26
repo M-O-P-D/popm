@@ -8,6 +8,7 @@ from math import ceil, sqrt
 
 from shapely.geometry import Point
 from shapely.ops import cascaded_union
+import shapely.wkt
 
 PSU_OFFICERS = 25
 
@@ -15,7 +16,7 @@ def load_data():
 
   # remove and rename columns
   geojson = "./data/force_boundaries_ugc.geojson"
-  force_data = "./data/PFAs-VECTOR-NAMES-Basic-with-Core-with-Alliance.csv"
+  force_data_file = "./data/PFAs-VECTOR-NAMES-Basic-with-Core-with-Alliance.csv"
   # From https://www.ons.gov.uk/peoplepopulationandcommunity/crimeandjustice/datasets/policeforceareadatatables
   # 6/2019 is the latest complete dataset
   population_data = "./data/population_data.csv"
@@ -35,7 +36,7 @@ def load_data():
   # length/area units are defined by the crs
   # df.crs.axis_info[0].unit_name
 
-  data = pd.read_csv(force_data) \
+  data = pd.read_csv(force_data_file) \
     .replace({"Metropolitan": "Metropolitan Police",
               "Bedfordshire": "Beds Cambs Herts",
               "West Midlands": "W Midlands W Mercia"}) \
@@ -60,7 +61,7 @@ def load_data():
   # When making the change, be mindful of axis order changes: https://pyproj4.github.io/pyproj/stable/gotchas.html#axis-order-changes-in-proj-6
 
   # extract boundary data
-  boundaries = gpd.GeoDataFrame(gdf[['name', 'geometry', 'Officers', 'POP', 'Percentage', 'core_function1',
+  force_data = gpd.GeoDataFrame(gdf[['name', 'geometry', 'Officers', 'POP', 'Percentage', 'core_function1',
     'core_function2', 'core_function1_pop', 'core_function2_pop', 'Alliance', 'population', 'households']])
 
   # extract centroid data
@@ -68,12 +69,12 @@ def load_data():
 
   # compute centroids and shift index so that agent ids arent duplicated
   # for now the centroids dont have the force data
-  centroids = gpd.GeoDataFrame(gdf[["name", "Alliance"]], geometry=gpd.points_from_xy(gdf.LONG, gdf.LAT), crs = {"init": "epsg:4326"})
-  centroids.index += 100
+  centroids = gpd.GeoDataFrame(gdf[["name", "Alliance"]], geometry=gpd.points_from_xy(gdf.LONG, gdf.LAT), crs = {"init": "epsg:4326"}).to_crs(epsg=27700)
 
   # add centroid column, but not as Shapely object as will get a serialisation error
-  boundaries = boundaries.merge(centroids.rename({"geometry": "centroid"}, axis=1)[["name", "centroid"]], on="name")
-  boundaries.centroid = boundaries.centroid.apply(lambda p: (p.x, p.y))
+  force_data = force_data.merge(centroids.rename({"geometry": "centroid"}, axis=1)[["name", "centroid"]], on="name")
+  #force_data.centroid = force_data.centroid.to_crs(epsg=27700)
+  force_data.centroid = force_data.centroid.apply(lambda p: p.wkt)
 
   # compute distance matrix
   # convert to different projection for distance computation
@@ -86,7 +87,7 @@ def load_data():
   distances = pd.DataFrame(m, columns=c.name, index=c.name)
 
 
-  return boundaries, distances
+  return force_data, distances
 
 def create_psu_data(forces, staff_absence):
 
@@ -125,9 +126,9 @@ def create_psu_data(forces, staff_absence):
     rows = ceil(sqrt(len(single_psu_data)))
     j = 0
     for idx, r in single_psu_data.iterrows():
-
-      x = r["centroid"][0] - rows * dx / 2
-      y = r["centroid"][1] - rows * dy / 2
+      p = shapely.wkt.loads(r["centroid"])
+      x = p.x - rows * dx / 2
+      y = p.y - rows * dy / 2
 
       # # NB // is integer division
       psu_data.at[idx, "geometry"] = Point([x + j // rows * dx, y + j % rows * dy])
