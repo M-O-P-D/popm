@@ -53,13 +53,6 @@ def load_data():
 
   gdf = gdf.merge(data, on="name", how="left", left_index=True).fillna(0).merge(populations, on="name")
 
-  # # ratio of police to people (hacks for missing data)
-  # for i in [15,22,26]:
-  #   gdf.at[i, "Officers"] = 0.004 * gdf.at[i, "population"]
-
-  # TODO this will be wrong for merged
-  #gdf["cops_per_pop"] = gdf.Officers / gdf.population
-
   # NOTE warnings:
   # pandas/core/generic.py:5155: UserWarning: Geometry is in a geographic CRS. Results from 'area' are likely incorrect. Use 'GeoSeries.to_crs()'
   # to re-project geometries to a projected CRS before this operation.
@@ -78,6 +71,10 @@ def load_data():
   centroids = gpd.GeoDataFrame(gdf[["name", "Alliance"]], geometry=gpd.points_from_xy(gdf.LONG, gdf.LAT), crs = {"init": "epsg:4326"})
   centroids.index += 100
 
+  # add centroid column, but not as Shapely object as will get a serialisation error
+  boundaries = boundaries.merge(centroids.rename({"geometry": "centroid"}, axis=1)[["name", "centroid"]], on="name")
+  boundaries.centroid = boundaries.centroid.apply(lambda p: (p.x, p.y))
+
   # compute distance matrix
   # convert to different projection for distance computation
   # see https://gis.stackexchange.com/questions/293310/how-to-use-geoseries-distance-to-get-the-right-answer
@@ -88,9 +85,10 @@ def load_data():
     m[i,:] = c.distance(c.geometry[i]) / 1000.0
   distances = pd.DataFrame(m, columns=c.name, index=c.name)
 
-  return boundaries, centroids, distances
 
-def create_psu_data(boundaries, centroids, staff_absence):
+  return boundaries, distances
+
+def create_psu_data(forces, staff_absence):
 
   # Assumption (as per netlogo) that each core function has 200 essential officers that can't be deployed elsewhere
 
@@ -99,16 +97,16 @@ def create_psu_data(boundaries, centroids, staff_absence):
 
   # must have at least 200 officers per function (assume dont have to be POP trained)
   presence = 1-staff_absence/100
-  f1_avail = np.minimum(boundaries.core_function1_pop * presence, np.maximum(0, boundaries.core_function1 * presence - 200))
-  f2_avail = np.minimum(boundaries.core_function2_pop * presence, np.maximum(0, boundaries.core_function2 * presence - 200))
+  f1_avail = np.minimum(forces.core_function1_pop * presence, np.maximum(0, forces.core_function1 * presence - 200))
+  f2_avail = np.minimum(forces.core_function2_pop * presence, np.maximum(0, forces.core_function2 * presence - 200))
 
-  boundaries["available_psus"] = np.floor((f1_avail + f2_avail) / PSU_OFFICERS).astype(int)
-  boundaries["dispatched_psus"] = 0
+  forces["available_psus"] = np.floor((f1_avail + f2_avail) / PSU_OFFICERS).astype(int)
+  forces["dispatched_psus"] = 0
 
-  psu_data = boundaries[["name", "Alliance", "geometry"]]
-  for _, r in boundaries.iterrows():
+  psu_data = forces[["name", "Alliance", "geometry", "centroid"]]
+  for _, r in forces.iterrows():
     n = r.available_psus
-    name = boundaries.name[r.name] # no idea why r.name is a number not a string
+    name = forces.name[r.name] # no idea why r.name is a number not a string
     if n < 1:
       psu_data.drop(psu_data[psu_data.name == name].index, inplace=True)
     if n > 1:
@@ -118,7 +116,7 @@ def create_psu_data(boundaries, centroids, staff_absence):
     assert len(psu_data[psu_data.name == name]) == n
 
   # now covert geometry from the force area polygon a unique offset from the centroid
-  for name in boundaries.name:
+  for name in forces.name:
 
     dx = 0.02
     dy = 0.01
@@ -128,21 +126,12 @@ def create_psu_data(boundaries, centroids, staff_absence):
     j = 0
     for idx, r in single_psu_data.iterrows():
 
-      # r.name is numeric and r["name"] is string for some reason
-      p = centroids[centroids.name == name].geometry.values[0]
-
-      x = p.x - rows * dx / 2
-      y = p.y - rows * dy / 2
+      x = r["centroid"][0] - rows * dx / 2
+      y = r["centroid"][1] - rows * dy / 2
 
       # # NB // is integer division
       psu_data.at[idx, "geometry"] = Point([x + j // rows * dx, y + j % rows * dy])
       j = j + 1
-
-      # while True:
-      #   random_point = Point([random.uniform(min_x, max_x), random.uniform(min_y, max_y)])
-      #   if random_point.within(r.geometry):
-      #     psu_data.at[i, "geometry"] = random_point
-      #     break
 
   psu_data["dispatched_to"] = ""
   psu_data["deployed"] = False
@@ -151,17 +140,26 @@ def create_psu_data(boundaries, centroids, staff_absence):
   return psu_data
 
 
-def initialise_events(no_of_events, event_resources, event_duration, force_centroid_agents):
+def initialise_event_data(no_of_events, event_resources, event_duration, forces):
   # activate events as per parameters
   # TODO use only Model RNG for reproducibility
   random.seed(19937)
-  active = random.sample(range(len(force_centroid_agents)), min(no_of_events, len(force_centroid_agents)))
+  active = random.sample(list(forces.index.values), min(no_of_events, len(forces)))
 
-  for a in active:
-    force_centroid_agents[a].public_order_events = 1
-    force_centroid_agents[a].event_resources_required = event_resources
-    force_centroid_agents[a].event_resources_allocated = 0
-    force_centroid_agents[a].event_resources_present = 0
-    force_centroid_agents[a].event_duration = event_duration
+  event_data = forces.loc[active, ["name", "Alliance", "geometry"]].copy()
+  
+  for i, r in event_data.iterrows():
+    min_x, min_y, max_x, max_y = r.geometry.bounds
+    while True:
+      p = Point([random.uniform(min_x, max_x), random.uniform(min_y, max_y)])
+      if p.within(r.geometry):
+        event_data.at[i, "geometry"] = p
+        break
 
-  return active
+  event_data["resources_required"] = event_resources
+  event_data["resources_allocated"] = 0
+  event_data["resources_present"] = 0
+  event_data["start_time"] = 0
+  event_data["duration"] = event_duration
+
+  return event_data
