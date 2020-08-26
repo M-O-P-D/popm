@@ -1,6 +1,7 @@
 from mesa_geo.geoagent import GeoAgent
 
 from shapely.geometry import Point
+import shapely.wkt
 
 from math import atan2, sin, cos
 
@@ -55,15 +56,16 @@ class ForcePSUAgent(GeoAgent):
 
 
   def __move_towards(self, speed):
-    dist2 = (self.shape.x - self.dest[0])**2 + (self.shape.y - self.dest[1])**2
+    dest = shapely.wkt.loads(self.dest)
+    dist2 = (self.shape.x - dest.x)**2 + (self.shape.y - dest.y)**2
     # >= 0.5 steps away
-    if dist2 < speed*speed/4:
+    if dist2 < speed*speed:
       # better displayed near rather than on?
       self.deployed = True
       # CRS problem means this is offset
-      self.shape = Point([self.dest[0], self.dest[1]])
+      self.shape = dest
     # avoids potential div0, but is there a more efficient approach
-    angle = atan2(self.dest[1] - self.shape.y, self.dest[0] - self.shape.x)
+    angle = atan2(dest.y - self.shape.y, dest.x - self.shape.x)
     x = self.shape.x + speed * cos(angle)
     y = self.shape.y + speed * sin(angle)
     return Point([x, y])
