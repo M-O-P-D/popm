@@ -72,10 +72,10 @@ class ForcePSUAgent(GeoAgent):
 class PublicOrderEventAgent(GeoAgent):
 
   """ Agent representing a reference point in the force area to compute costs (distances) and track public order events within the force area """
-  def __init__(self, unique_id, model, shape): 
+  def __init__(self, unique_id, model, shape):
     super().__init__(unique_id, model, shape)
 
-    self.active = True # TODO delayed start 
+    self.active = True # TODO delayed start
 
   def step(self):
     self.duration -= 1

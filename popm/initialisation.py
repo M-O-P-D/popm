@@ -147,7 +147,7 @@ def initialise_event_data(no_of_events, event_resources, event_duration, forces)
   active = random.sample(list(forces.index.values), min(no_of_events, len(forces)))
 
   event_data = forces.loc[active, ["name", "Alliance", "geometry"]].copy()
-  
+
   for i, r in event_data.iterrows():
     min_x, min_y, max_x, max_y = r.geometry.bounds
     while True:
