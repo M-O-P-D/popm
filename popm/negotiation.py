@@ -30,71 +30,70 @@ def rank(forces, name, distances, event_duration):
       ranks.append((f.name, f.available_psus / despatch_time))
   return sorted(ranks, key=lambda t: -t[1])
 
+# TODO deploy_immediately no longer required
 def mark_psu_dispatched(force_name, event_location, event_point, psu_agents, deploy_immediately=False):
   avail = [a for a in psu_agents if a.name == force_name and a.dispatched_to == ""]
   if len(avail) == 0:
     raise ValueError("no psu available for dispatch from %s to %s" % (force_name, event_location))
   avail[0].deployed = deploy_immediately
   avail[0].dispatched_to = event_location
+  # use tuple to avoid TypeError: Object of type Point is not JSON serializable
   avail[0].dest = (event_point.x, event_point.y)
 
-def allocate(active, force_area_agents, force_centroid_agents, force_psu_agents, distances, event_duration, log):
-
+def allocate(event_agents, force_agents, psu_agents, distances, log):
   # ensure we allocate in-location first (to stop resources being taken by other areas)
-  for a in active:
-    # code below assumes force_area_agents and force_centroid_agents are ordered the same
-    assert force_area_agents[a].name == force_centroid_agents[a].name
+  for a in event_agents:
 
     # allocate self resources
-    f = find_force(force_area_agents, force_centroid_agents[a].name)
-    req = force_centroid_agents[a].event_resources_required
+    f = find_force(force_agents, a.name)
+    req = a.resources_required
 
     allocated = 0
-    while req > 0 and force_area_agents[a].available_psus > 0:
-      mark_psu_dispatched(f.name, f.name, force_centroid_agents[a].shape, force_psu_agents, deploy_immediately=True) # already in right place
+    while req > 0 and f.available_psus > 0:
+      mark_psu_dispatched(f.name, f.name, a.shape, psu_agents)
       req -= PSU_OFFICERS
-      force_centroid_agents[a].event_resources_allocated += PSU_OFFICERS
+      a.resources_allocated += PSU_OFFICERS
       # in-force are automatically present
-      force_centroid_agents[a].event_resources_present += PSU_OFFICERS
-      force_area_agents[a].available_psus -= 1
-      force_area_agents[a].dispatched_psus += 1
+      a.resources_present += PSU_OFFICERS
+      f.available_psus -= 1
+      f.dispatched_psus += 1
       allocated += 1
-    log.append("%d PSUs allocated from %s" % (allocated, force_area_agents[a].name))
+    log.append("%d PSUs allocated from %s" % (allocated, f.name))
 
-  for a in active:
+  for a in event_agents:
     # allocate self resources
-    f = find_force(force_area_agents, force_centroid_agents[a].name)
-    req = force_centroid_agents[a].event_resources_required - force_centroid_agents[a].event_resources_allocated
+    f = find_force(force_agents, a.name)
+    req = a.resources_required - a.resources_allocated
 
     # if not fully resourced, request from alliance member
     if req > 0:
-      forces = find_other_forces(force_area_agents, force_centroid_agents[a].name, force_centroid_agents[a].Alliance)
-      ranks = rank(forces, force_centroid_agents[a].name, distances, event_duration)
+      forces = find_other_forces(force_agents, a.name, a.Alliance)
+      ranks = rank(forces, a.name, distances, a.duration)
       for r in ranks:
-        f = find_force(force_area_agents, r[0])
+        f = find_force(force_agents, r[0])
         allocated = 0
         while req > 0 and f.available_psus > 0:
-          mark_psu_dispatched(f.name, force_centroid_agents[a].name, force_centroid_agents[a].shape, force_psu_agents)
+          mark_psu_dispatched(f.name, a.name, a.shape, psu_agents)
           req -= PSU_OFFICERS
-          force_centroid_agents[a].event_resources_allocated += PSU_OFFICERS
+          a.resources_allocated += PSU_OFFICERS
           f.available_psus -= 1
           f.dispatched_psus += 1
           allocated += 1
-        if allocated > 0: log.append("%d PSUs allocated from alliance %s to %s (rank=%f)" % (allocated, f.name, force_area_agents[a].name, r[1]))
+        if allocated > 0: log.append("%d PSUs allocated from alliance %s to %s (rank=%f)" % (allocated, f.name, a.name, r[1]))
 
     # if still not fully resourced, request other forces
     if req > 0:
       # allocations from further afield
-      forces = find_other_forces(force_area_agents, force_centroid_agents[a].name, force_centroid_agents[a].Alliance, in_alliance=False)
-      ranks = rank(forces, force_centroid_agents[a].name, distances, event_duration)
+      forces = find_other_forces(force_agents, a.name, a.Alliance, in_alliance=False)
+      ranks = rank(forces, a.name, distances, a.duration)
       for r in ranks:
-        f = find_force(force_area_agents, r[0])
+        f = find_force(force_agents, r[0])
         allocated = 0
         while req > 0 and f.available_psus > 0:
-          mark_psu_dispatched(f.name, force_centroid_agents[a].name, force_centroid_agents[a].shape, force_psu_agents)
+          mark_psu_dispatched(f.name, a.name, a.shape, psu_agents)
           req -= PSU_OFFICERS
-          force_centroid_agents[a].event_resources_allocated += PSU_OFFICERS
+          a.resources_allocated += PSU_OFFICERS
           f.available_psus -= 1
           f.dispatched_psus += 1
           allocated += 1
-        if allocated > 0: log.append("%d PSUs allocated from %s to %s (rank=%f)" % (allocated, f.name, force_area_agents[a].name, r[1]))
+        if allocated > 0: log.append("%d PSUs allocated from %s to %s (rank=%f)" % (allocated, f.name, a.name, r[1]))
