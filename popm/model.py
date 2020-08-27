@@ -14,9 +14,11 @@ class PublicOrderPolicing(Model):
   An agent-based model of resource allocation in response to public order events.
   Source code at https://github.com/M-O-P-D/popm
   """
-  def __init__(self, no_of_events, event_resources, event_duration, staff_absence, seed=None): #params...
+  def __init__(self, no_of_events, event_resources, event_duration, staff_absence, timestep, seed=None): #params...
 
     self.log = ["Initialising model"]
+
+    self.timestep = timestep
 
     self.datacollector = DataCollector(model_reporters={})
 

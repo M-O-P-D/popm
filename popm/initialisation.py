@@ -24,7 +24,8 @@ def load_data():
   gdf = gpd.read_file(geojson, crs={ "init": "epsg:4326" }) \
     .drop(["OBJECTID"], axis=1) \
     .rename({"PFA16CD": "code", "PFA16NM": "name" }, axis=1) \
-    .set_index("code", drop=True)
+    .set_index("code", drop=True) \
+    .to_crs(epsg=27700)
 
   # Merge: W.Midlands+W.Mercia and Beds+Cambs+Beds+Herts
   gdf.at["E23000014", "geometry"] = cascaded_union([gdf.at["E23000014", "geometry"], gdf.at["E23000016", "geometry"]])
@@ -79,13 +80,10 @@ def load_data():
   # compute distance matrix
   # convert to different projection for distance computation
   # see https://gis.stackexchange.com/questions/293310/how-to-use-geoseries-distance-to-get-the-right-answer
-  # index offset by 100 needs to be reset for loop below to work
-  c = centroids.to_crs(epsg=3310).reset_index(drop=True)
-  m = np.zeros((len(c), len(c)))
-  for i in range(len(c)):
-    m[i,:] = c.distance(c.geometry[i]) / 1000.0
-  distances = pd.DataFrame(m, columns=c.name, index=c.name)
-
+  m = np.zeros((len(centroids), len(centroids)))
+  for i in range(len(centroids)):
+    m[i,:] = centroids.distance(centroids.geometry[i]) / 1000.0
+  distances = pd.DataFrame(m, columns=centroids.name, index=centroids.name)
 
   return force_data, distances
 
@@ -119,8 +117,8 @@ def create_psu_data(forces, staff_absence):
   # now covert geometry from the force area polygon a unique offset from the centroid
   for name in forces.name:
 
-    dx = 0.02
-    dy = 0.01
+    dx = 1000
+    dy = 1000
     single_psu_data = psu_data[psu_data.name == name]
 
     rows = ceil(sqrt(len(single_psu_data)))
@@ -162,5 +160,11 @@ def initialise_event_data(no_of_events, event_resources, event_duration, forces)
   event_data["resources_present"] = 0
   event_data["start_time"] = 0
   event_data["duration"] = event_duration
+
+  # print(event_data.head())
+  # event_data.geometry.apply(lambda g: print("event@"+g.wkt))
+  # event_data.geometry.apply(lambda g: print(shapely.wkt.loads(g.wkt)))
+  # print(event_data.crs)
+
 
   return event_data

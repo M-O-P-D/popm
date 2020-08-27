@@ -29,10 +29,10 @@ model_params = {
   ),
   "event_duration": UserSettableParameter(
     "slider",
-    "Duration of event",
+    "Duration of event (hours)",
     8,
-    0,
-    20,
+    1,
+    24,
     1,
     description="Duration of event, shorter events require faster responses"
   ),
@@ -44,6 +44,15 @@ model_params = {
     100,
     1,
     description="The current staff absence rate in percent"
+  ),
+  "timestep": UserSettableParameter(
+    "slider",
+    "Timestep (minutes)",
+    15,
+    5,
+    120,
+    5,
+    description="The timestep length in minutes"
   ),
   "seed": 19937
 }
