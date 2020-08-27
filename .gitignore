@@ -130,3 +130,5 @@ dmypy.json
 .pyre/
 
 data/PFAs-VECTOR-NAMES-Basic-with-Core-with-Alliance.csv
+
+.vscode/

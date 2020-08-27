@@ -31,11 +31,12 @@ def rank(forces, name, distances, event_duration):
   return sorted(ranks, key=lambda t: -t[1])
 
 # TODO deploy_immediately no longer required
-def mark_psu_dispatched(force_name, event_agent, psu_agents, deploy_immediately=False):
-  avail = [a for a in psu_agents if a.name == force_name and a.dest is None]
+def mark_psu_dispatched(force_name, event_agent, psu_agents):
+  avail = [a for a in psu_agents if a.name == force_name and not a.assigned]
   if len(avail) == 0:
     raise ValueError("no psu available for dispatch from %s to %s" % (force_name, event_location))
-  avail[0].deployed = deploy_immediately
+  avail[0].assigned = True
+  avail[0].deployed = False
   avail[0].dispatched_to = event_agent.name #event_location
   # use wkt string to avoid TypeError: Object of type Point is not JSON serializable
   avail[0].dest = event_agent.shape.wkt
