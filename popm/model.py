@@ -18,7 +18,8 @@ class PublicOrderPolicing(Model):
 
     self.log = ["Initialising model"]
 
-    self.timestep = timestep
+    # hourly (input is minutes)
+    self.timestep = timestep / 60
 
     self.datacollector = DataCollector(model_reporters={})
 
@@ -67,11 +68,15 @@ class PublicOrderPolicing(Model):
     self.running = True # doesnt work
     # self.log.append("running=%s" % self.running)
 
+  def time(self):
+    return self.schedule.steps * self.timestep
+
   def step(self):
     """
     Have the scheduler advance each cell by one step
     """
     self.schedule.step()
+    #print("total force agents = %d" % len([a for a in self.schedule.agents if isinstance(a, ForceAreaAgent)]))
 
 
 # if __name__ == "__main__":

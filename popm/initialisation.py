@@ -14,13 +14,13 @@ PSU_OFFICERS = 25
 
 def load_data():
 
-  # remove and rename columns
   geojson = "./data/force_boundaries_ugc.geojson"
   force_data_file = "./data/PFAs-VECTOR-NAMES-Basic-with-Core-with-Alliance.csv"
   # From https://www.ons.gov.uk/peoplepopulationandcommunity/crimeandjustice/datasets/policeforceareadatatables
   # 6/2019 is the latest complete dataset
   population_data = "./data/population_data.csv"
 
+  # remove and rename columns
   gdf = gpd.read_file(geojson, crs={ "init": "epsg:4326" }) \
     .drop(["OBJECTID"], axis=1) \
     .rename({"PFA16CD": "code", "PFA16NM": "name" }, axis=1) \
@@ -132,20 +132,21 @@ def create_psu_data(forces, staff_absence):
       psu_data.at[idx, "geometry"] = Point([x + j // rows * dx, y + j % rows * dy])
       j = j + 1
 
-  psu_data["dispatched_to"] = ""
+  psu_data["dispatched_to"] = None
+  psu_data["assigned"] = False
   psu_data["deployed"] = False
   psu_data.index += 1000 # ensure unique
 
   return psu_data
 
 
-def initialise_event_data(no_of_events, event_resources, event_duration, forces):
+def initialise_event_data(no_of_events, event_resources, event_duration, force_data):
   # activate events as per parameters
   # TODO use only Model RNG for reproducibility
   random.seed(19937)
-  active = random.sample(list(forces.index.values), min(no_of_events, len(forces)))
+  active = random.sample(list(force_data.index.values), min(no_of_events, len(force_data)))
 
-  event_data = forces.loc[active, ["name", "Alliance", "geometry"]].copy()
+  event_data = force_data.loc[active, ["name", "Alliance", "geometry"]].copy()
 
   for i, r in event_data.iterrows():
     min_x, min_y, max_x, max_y = r.geometry.bounds
@@ -161,10 +162,6 @@ def initialise_event_data(no_of_events, event_resources, event_duration, forces)
   event_data["start_time"] = 0
   event_data["duration"] = event_duration
 
-  # print(event_data.head())
-  # event_data.geometry.apply(lambda g: print("event@"+g.wkt))
-  # event_data.geometry.apply(lambda g: print(shapely.wkt.loads(g.wkt)))
-  # print(event_data.crs)
-
+  event_data.index += 100 # ensure unique
 
   return event_data
