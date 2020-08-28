@@ -1,5 +1,5 @@
 from mesa_geo.visualization.ModularVisualization import ModularServer
-#from mesa.visualization.modules import CanvasGrid, ChartModule
+from mesa.visualization.modules import ChartModule
 from mesa.visualization.UserParam import UserSettableParameter
 
 from mesa_geo.visualization.MapModule import MapModule
@@ -57,22 +57,16 @@ model_params = {
   "seed": 19937
 }
 
-# Make a world that is 50x50, on a 250x250 display.
-#canvas_element = CanvasGrid(portray_cell, NX, NY, SIZE * NX, SIZE * NY)
+chart_element = ChartModule(
+  [
+    {"Label": "Assigned", "Color": "Black", "Description": "canuseeme?" },
+    {"Label": "Deployed", "Color": "Blue"},
+    {"Label": "Shortfall", "Color": "Orange"},
+    {"Label": "Deficit", "Color": "Red"},
+  ]
+)
 
-# chart_element = ChartModule(
-#   [
-#     {"Label": "1st Gen", "Color": cellColour(1)},
-#     {"Label": "2nd Gen", "Color": cellColour(2)},
-#     {"Label": "3rd Gen", "Color": cellColour(3)},
-#     {"Label": "4th Gen", "Color": cellColour(4)},
-#     {"Label": "5th Gen", "Color": cellColour(5)},
-#     {"Label": "6th Gen", "Color": cellColour(6)},
-#     {"Label": "7th+ Gen", "Color": cellColour(7)}
-#   ]
-# )
-
-map_element = MapModule(portray_map, [52.9, -1.8], 6, 640, 640)
+map_element = MapModule(portray_map, [52.9, -1.8], 6, 600, 600)
 console = LogElement()
 
-server = ModularServer(PublicOrderPolicing, [map_element, console], "Public Order Policing Model", model_params)
+server = ModularServer(PublicOrderPolicing, [map_element, chart_element, console], "Public Order Policing Model", model_params)

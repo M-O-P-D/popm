@@ -100,3 +100,7 @@ def allocate(event_agents, force_agents, psu_agents, distances, log):
           f.dispatched_psus += 1
           allocated += 1
         if allocated > 0: log.append("%d PSUs allocated from %s to %s (rank=%f)" % (allocated, f.name, a.name, r[1]))
+
+    # if still not fully resourced, print a message
+    if req > 0:
+      log.append("** %s event cannot be fully resource allocated **" % a.name)
