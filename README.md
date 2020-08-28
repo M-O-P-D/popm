@@ -37,16 +37,18 @@ mesa runserver .
 
 ### Docker
 
+See the [Dockerfile](./Dockerfile)
+
 e.g.
 
 ```bash
 docker build -t MOPD/popm .
 ```
 
-to run on default http port:
+to run on default http port (mapping mesa's default port of 8521 to port 80):
 
 ```bash
-docker run --rm -d -p 80:8521/tcp virgesmith/popm:latest
+docker run --rm -d -p 80:8521/tcp mopd/popm:latest
 ```
 
 to push to the M.O.P.D. repository:

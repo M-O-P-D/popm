@@ -7,6 +7,7 @@ from mesa_geo import GeoSpace
 from .agents import ForceAreaAgent, ForcePSUAgent, PublicOrderEventAgent
 from .initialisation import load_data, create_psu_data, initialise_event_data
 from .negotiation import allocate
+from .data_collection import get_num_assigned, get_num_deployed, get_num_shortfall, get_num_deficit
 
 class PublicOrderPolicing(Model):
   # below ends up in the "About" menu
@@ -21,8 +22,12 @@ class PublicOrderPolicing(Model):
     # hourly (input is minutes)
     self.timestep = timestep / 60
 
-    self.datacollector = DataCollector(model_reporters={})
-
+    self.datacollector = DataCollector(model_reporters={
+          "Assigned": get_num_assigned,
+          "Deployed": get_num_deployed,
+          "Shortfall": get_num_shortfall,
+          "Deficit": get_num_deficit,
+      })
     # Set up the grid and schedule.
 
     # Use SimultaneousActivation which simulates all the cells
@@ -75,6 +80,7 @@ class PublicOrderPolicing(Model):
     """
     Have the scheduler advance each cell by one step
     """
+    self.datacollector.collect(self)
     self.schedule.step()
     #print("total force agents = %d" % len([a for a in self.schedule.agents if isinstance(a, ForceAreaAgent)]))
 
