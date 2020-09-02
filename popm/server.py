@@ -30,7 +30,7 @@ model_params = {
   "event_start": UserSettableParameter(
     "slider",
     "Start time of event (hours)",
-    0,
+    2,
     0,
     24,
     1,

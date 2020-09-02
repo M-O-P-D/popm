@@ -13,13 +13,15 @@
 - [X] Allocate PSUs as necessary from other force areas within alliance
 - [X] Allocate PSUs if necessary from force areas outside alliance
 - [X] Move PSUs to events
-- [ ] Return PSUs when events over
+- [X] Return PSUs when events over
 
 popm is deployed as an app service [here](https://popm.azurewebsites.net)
 
 ## Developer Setup
 
 `popm` is written in python3 and uses the [mesa](https://mesa.readthedocs.io/en/master/) ABM framework with the [mesa-geo](https://github.com/Corvince/mesa-geo) mapping extension. Use of a virtualenv or similar is recommended, but not essential. A [Dockerfile](./Dockerfile) is provided for containerisation and deployment.
+
+NOTE: the police force dataset used (for now) by the model is fictitious, regardless of this it is not stored in the repo in anticipation that the real data will be sensitive.
 
 ### Native
 
