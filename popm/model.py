@@ -15,7 +15,7 @@ class PublicOrderPolicing(Model):
   An agent-based model of resource allocation in response to public order events.
   Source code at https://github.com/M-O-P-D/popm
   """
-  def __init__(self, no_of_events, event_resources, event_duration, staff_absence, timestep, seed=None): #params...
+  def __init__(self, no_of_events, event_resources, event_start, event_duration, staff_absence, timestep, seed=None): #params...
 
     self.log = ["Initialising model"]
 
@@ -40,7 +40,7 @@ class PublicOrderPolicing(Model):
     self.grid = GeoSpace()
 
     # Ultra Generalised Clipped otherwise too much rendering
-    force_data, distances = load_data()
+    force_data, self.distances = load_data()
     # create PSU dataset (which appends to force data too, so must do this *before* creating the force agents)
     psu_data = create_psu_data(force_data, staff_absence)
 
@@ -59,7 +59,7 @@ class PublicOrderPolicing(Model):
       self.schedule.add(agent)
 
     # then the public order event data and agents
-    event_data = initialise_event_data(no_of_events, event_resources, event_duration, force_data)
+    event_data = initialise_event_data(no_of_events, event_resources, event_start, event_duration, force_data)
     self.log.append("Events started in %s" % event_data["name"].values)
     factory = AgentCreator(PublicOrderEventAgent, { "model": self})
     event_agents = factory.from_GeoDataFrame(event_data)
@@ -67,11 +67,11 @@ class PublicOrderPolicing(Model):
     for agent in event_agents:
       self.schedule.add(agent)
 
-    # now assign PSUs to events
-    allocate(event_agents, force_agents, psu_agents, distances, self.log)
-
     self.running = True # doesnt work
     # self.log.append("running=%s" % self.running)
+
+    # now assign PSUs to events
+    allocate(event_agents, force_agents, psu_agents, self.distances, self.log)
 
   def time(self):
     return self.schedule.steps * self.timestep
@@ -80,6 +80,9 @@ class PublicOrderPolicing(Model):
     """
     Have the scheduler advance each cell by one step
     """
+    # ForceAreaAgent, ForcePSUAgent, PublicOrderEventAgent
+    #event_agents = [a for a in self.shedule.agents if isinstance(a, PublicOrderEventAgent)]
+
     self.datacollector.collect(self)
     self.schedule.step()
     #print("total force agents = %d" % len([a for a in self.schedule.agents if isinstance(a, ForceAreaAgent)]))

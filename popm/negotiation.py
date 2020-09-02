@@ -71,7 +71,7 @@ def allocate(event_agents, force_agents, psu_agents, distances, log):
     # if not fully resourced, request from alliance member
     if req > 0:
       forces = find_other_forces(force_agents, a.name, a.Alliance)
-      ranks = rank(forces, a.name, distances, a.duration)
+      ranks = rank(forces, a.name, distances, a.time_to_start) # TODO confirm if should be start, end or both
       for r in ranks:
         f = find_force(force_agents, r[0])
         allocated = 0
@@ -88,7 +88,7 @@ def allocate(event_agents, force_agents, psu_agents, distances, log):
     if req > 0:
       # allocations from further afield
       forces = find_other_forces(force_agents, a.name, a.Alliance, in_alliance=False)
-      ranks = rank(forces, a.name, distances, a.duration)
+      ranks = rank(forces, a.name, distances, a.time_to_start) # TODO confirm if should be start, end or both
       for r in ranks:
         f = find_force(force_agents, r[0])
         allocated = 0

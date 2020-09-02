@@ -27,6 +27,15 @@ model_params = {
     10,
     description="No. of officers required at each event"
   ),
+  "event_start": UserSettableParameter(
+    "slider",
+    "Start time of event (hours)",
+    0,
+    0,
+    24,
+    1,
+    description="Start time of event, sooner events require faster responses"
+  ),
   "event_duration": UserSettableParameter(
     "slider",
     "Duration of event (hours)",
