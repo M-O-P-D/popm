@@ -14,7 +14,7 @@ PSU_OFFICERS = 25
 
 CORE_FUNCTIONS = ["emergency", "firearms", "major_incident", "public_order", "serious_crime", "custody"]
 
-CORE_FUNCTIONS_MIN = [80,80,80,0,80,80] # officers retained in each of the above functions 
+CORE_FUNCTIONS_MIN = [80,80,80,0,80,80] # officers retained in each of the above functions
 
 def load_data():
 
@@ -160,7 +160,7 @@ def initialise_event_data(no_of_events, event_resources, event_start, event_dura
   event_data["resources_allocated"] = 0
   event_data["resources_present"] = 0
   # times relative to current step
-  event_data["time_to_start"] = event_start
+event_data["time_to_start"] = event_start
   event_data["time_to_end"] = event_start + event_duration
 
   event_data.index += 100 # ensure unique
