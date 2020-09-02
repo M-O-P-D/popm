@@ -12,6 +12,10 @@ import shapely.wkt
 
 PSU_OFFICERS = 25
 
+CORE_FUNCTIONS = ["emergency", "firearms", "major_incident", "public_order", "serious_crime", "custody"]
+
+CORE_FUNCTIONS_MIN = [80,80,80,0,80,80] # officers retained in each of the above functions 
+
 def load_data():
 
   geojson = "./data/force_boundaries_ugc.geojson"
@@ -41,12 +45,7 @@ def load_data():
     .replace({"Metropolitan": "Metropolitan Police",
               "Bedfordshire": "Beds Cambs Herts",
               "West Midlands": "W Midlands W Mercia"}) \
-    .rename({"Force": "name",
-             "Core-function-1 ": "core_function1",
-             "Core-function-2": "core_function2",
-             "Core-function-1-POP": "core_function1_pop",
-             "Core-function-2-POP": "core_function2_pop"
-            }, axis=1)
+    .rename({"Force": "name"}, axis=1)
   # POP = Public Order (trained) Police
 
   populations = pd.read_csv(population_data) \
@@ -62,8 +61,8 @@ def load_data():
   # When making the change, be mindful of axis order changes: https://pyproj4.github.io/pyproj/stable/gotchas.html#axis-order-changes-in-proj-6
 
   # extract boundary data
-  force_data = gpd.GeoDataFrame(gdf[['name', 'geometry', 'Officers', 'POP', 'Percentage', 'core_function1',
-    'core_function2', 'core_function1_pop', 'core_function2_pop', 'Alliance', 'population', 'households']])
+  columns = ['name', 'geometry', 'Officers', 'POP', 'Percentage', 'Alliance', 'population', 'households'] + CORE_FUNCTIONS + [f + "_POP" for f in CORE_FUNCTIONS]
+  force_data = gpd.GeoDataFrame(gdf[columns])
 
   # extract centroid data
   # TODO the geojson contains latlong and BNG coords for centroids so could directly compute distances from east/northings (if simpler)
@@ -96,10 +95,11 @@ def create_psu_data(forces, staff_absence):
 
   # must have at least 200 officers per function (assume dont have to be POP trained)
   presence = 1-staff_absence/100
-  f1_avail = np.minimum(forces.core_function1_pop * presence, np.maximum(0, forces.core_function1 * presence - 200))
-  f2_avail = np.minimum(forces.core_function2_pop * presence, np.maximum(0, forces.core_function2 * presence - 200))
+  avail = 0
+  for i in range(len(CORE_FUNCTIONS)):
+    avail += np.minimum(forces[CORE_FUNCTIONS[i]+"_POP"] * presence, np.maximum(0, forces[CORE_FUNCTIONS[i]] * presence - CORE_FUNCTIONS_MIN[i]))
 
-  forces["available_psus"] = np.floor((f1_avail + f2_avail) / PSU_OFFICERS).astype(int)
+  forces["available_psus"] = np.floor(avail / PSU_OFFICERS).astype(int)
   forces["dispatched_psus"] = 0
 
   psu_data = forces[["name", "Alliance", "geometry", "centroid"]]
