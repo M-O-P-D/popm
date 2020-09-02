@@ -110,22 +110,26 @@ class PublicOrderEventAgent(GeoAgent):
 
   def step(self):
     # TODO remove event once ended
-    if self.duration > 0:
-      self.duration -= self.model.timestep
-      if self.duration <= 0:
-        self.model.log.append("Event ended in %s" % self.name)
-        self.resources_required = 0
-        self.resources_allocated = 0
-        # deallocate agents
-        psus = self.__get_psu_agents()
-        for a in psus:
-          self.resources_present -= PSU_OFFICERS
-          a.dest = a.home
-          a.dispatched_to = None
-          a.deployed = False
+    self.time_to_start -= self.model.timestep
+    self.time_to_end -= self.model.timestep
+
+    if self.time_to_start <= 0 and self.time_to_start > -self.model.timestep:
+      self.model.log.append("Event started in %s" % self.name)
+
+    if self.time_to_end <= 0 and self.time_to_end > -self.model.timestep:
+      self.model.log.append("Event ended in %s" % self.name)
+      self.resources_required = 0
+      self.resources_allocated = 0
+      # deallocate agents
+      psus = self.__get_psu_agents()
+      for a in psus:
+        self.resources_present -= PSU_OFFICERS
+        a.dest = a.home
+        a.dispatched_to = None
+        a.deployed = False
 
   def render(self):
-    if self.duration > 0:
+    if self.time_to_end > 0:
       return { "radius": 4, "color": "Red" if self.resources_allocated < self.resources_required else "Black"}
     return { "radius": 4, "color": "Gray" }
 

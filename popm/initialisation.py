@@ -140,7 +140,7 @@ def create_psu_data(forces, staff_absence):
   return psu_data
 
 
-def initialise_event_data(no_of_events, event_resources, event_duration, force_data):
+def initialise_event_data(no_of_events, event_resources, event_start, event_duration, force_data):
   # activate events as per parameters
   # TODO use only Model RNG for reproducibility
   random.seed(19937)
@@ -159,8 +159,9 @@ def initialise_event_data(no_of_events, event_resources, event_duration, force_d
   event_data["resources_required"] = event_resources
   event_data["resources_allocated"] = 0
   event_data["resources_present"] = 0
-  event_data["start_time"] = 0
-  event_data["duration"] = event_duration
+  # times relative to current step
+  event_data["time_to_start"] = event_start
+  event_data["time_to_end"] = event_start + event_duration
 
   event_data.index += 100 # ensure unique
 
