@@ -18,6 +18,11 @@ model_params = {
     1,
     description="The number of initial public order events"
   ),
+  "event_locations": UserSettableParameter(
+    "choice",
+    "Event Locations", value="Fixed",
+    choices=["Fixed", "Random", "Breaking Point"]
+  ),
   "event_resources": UserSettableParameter(
     "slider",
     "No. of officers required at each event",
@@ -62,11 +67,6 @@ model_params = {
     120,
     5,
     description="The timestep length in minutes"
-  ),
-  "initialisation": UserSettableParameter(
-    "choice",
-    "Initialisation", value="Fixed seed",
-    choices=["Fixed seed", "Random seed", "Breaking Point"]
   )
 }
 
