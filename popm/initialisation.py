@@ -61,7 +61,7 @@ def load_data():
   # When making the change, be mindful of axis order changes: https://pyproj4.github.io/pyproj/stable/gotchas.html#axis-order-changes-in-proj-6
 
   # extract boundary data
-  columns = ['name', 'geometry', 'Officers', 'POP', 'Percentage', 'Alliance', 'population', 'households'] + CORE_FUNCTIONS + [f + "_POP" for f in CORE_FUNCTIONS]
+  columns = ['name', 'geometry', 'Officers', 'POP', 'Percentage', 'Alliance', 'population', 'households', 'reserved_psus'] + CORE_FUNCTIONS + [f + "_POP" for f in CORE_FUNCTIONS]
   force_data = gpd.GeoDataFrame(gdf[columns])
 
   # extract centroid data
@@ -105,14 +105,16 @@ def create_psu_data(forces, staff_absence):
   psu_data = forces[["name", "Alliance", "geometry", "centroid"]]
   for _, r in forces.iterrows():
     n = r.available_psus
+    nres = r.reserved_psus
     name = forces.name[r.name] # no idea why r.name is a number not a string
     if n < 1:
       psu_data.drop(psu_data[psu_data.name == name].index, inplace=True)
-    if n > 1:
+    if n > 1: # first add reserved psus (that don't leave force area)
       psu = psu_data[psu_data["name"] == name]
       psu_data = psu_data.append([psu]*(n-1),ignore_index=True)
+    psu_data.loc[psu_data["name"] == name, "reserved"] = [True]*nres + [False]*(n-nres)
     # check we have the right number
-    assert len(psu_data[psu_data.name == name]) == n
+    assert len(psu_data[psu_data.name == name]) == n, "%s %d vs %d" % (name, len(psu_data[psu_data.name == name]), n)
 
   # now covert geometry from the force area polygon a unique offset from the centroid
   for name in forces.name:
@@ -132,11 +134,13 @@ def create_psu_data(forces, staff_absence):
       psu_data.at[idx, "geometry"] = Point([x + j // rows * dx, y + j % rows * dy])
       j = j + 1
 
-  psu_data["dispatched_to"] = None
+  psu_data["assigned_to"] = None
   psu_data["assigned"] = False
+  psu_data["dispatched"] = False
   psu_data["deployed"] = False
   psu_data.index += 1000 # ensure unique
 
+  print(psu_data.head())
   return psu_data
 
 
