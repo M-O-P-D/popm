@@ -140,7 +140,6 @@ def create_psu_data(forces, staff_absence):
   psu_data["deployed"] = False
   psu_data.index += 1000 # ensure unique
 
-  print(psu_data.head())
   return psu_data
 
 
