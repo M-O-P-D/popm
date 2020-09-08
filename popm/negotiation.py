@@ -31,13 +31,13 @@ def rank(forces, name, distances, event_duration):
   return sorted(ranks, key=lambda t: -t[1])
 
 # TODO deploy_immediately no longer required
-def mark_psu_dispatched(force_name, event_agent, psu_agents):
-  avail = [a for a in psu_agents if a.name == force_name and not a.assigned]
+def mark_psu_assigned(force_name, event_agent, psu_agents, include_reserved=False):
+  avail = [a for a in psu_agents if a.name == force_name and not a.assigned and (include_reserved or not a.reserved)]
   if len(avail) == 0:
-    raise ValueError("no psu available for dispatch from %s to %s" % (force_name, event_location))
+    return #raise ValueError("no psu available for dispatch from %s to %s" % (force_name, event_location))
   avail[0].assigned = True
   avail[0].deployed = False
-  avail[0].dispatched_to = event_agent.name #event_location
+  avail[0].assigned_to = event_agent.name #event_location
   # use wkt string to avoid TypeError: Object of type Point is not JSON serializable
   avail[0].dest = event_agent.shape.wkt
   #avail[0].event = event_agent
@@ -45,7 +45,6 @@ def mark_psu_dispatched(force_name, event_agent, psu_agents):
 def allocate(event_agents, force_agents, psu_agents, distances, log):
   # ensure we allocate in-location first (to stop resources being taken by other areas)
   for a in event_agents:
-
     # allocate self resources
     f = find_force(force_agents, a.name)
     req = a.resources_required
@@ -53,7 +52,7 @@ def allocate(event_agents, force_agents, psu_agents, distances, log):
     allocated = 0
     while req > 0 and f.available_psus > 0:
       #print(a.shape)
-      mark_psu_dispatched(f.name, a, psu_agents)
+      mark_psu_assigned(f.name, a, psu_agents, include_reserved=True)
       req -= PSU_OFFICERS
       a.resources_allocated += PSU_OFFICERS
       # in-force are automatically present
@@ -76,7 +75,7 @@ def allocate(event_agents, force_agents, psu_agents, distances, log):
         f = find_force(force_agents, r[0])
         allocated = 0
         while req > 0 and f.available_psus > 0:
-          mark_psu_dispatched(f.name, a, psu_agents)
+          mark_psu_assigned(f.name, a, psu_agents)
           req -= PSU_OFFICERS
           a.resources_allocated += PSU_OFFICERS
           f.available_psus -= 1
@@ -93,7 +92,7 @@ def allocate(event_agents, force_agents, psu_agents, distances, log):
         f = find_force(force_agents, r[0])
         allocated = 0
         while req > 0 and f.available_psus > 0:
-          mark_psu_dispatched(f.name, a, psu_agents)
+          mark_psu_assigned(f.name, a, psu_agents)
           req -= PSU_OFFICERS
           a.resources_allocated += PSU_OFFICERS
           f.available_psus -= 1

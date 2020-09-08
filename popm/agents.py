@@ -33,7 +33,6 @@ class ForcePSUAgent(GeoAgent):
 
     super().__init__(unique_id, model, shape)
 
-    # TODO use this not the string dispatched_to
     self.dest = None
     self.home = shape.wkt
     # TODO Can't use a ref to agents directly as its not JSON serialisable
@@ -54,16 +53,18 @@ class ForcePSUAgent(GeoAgent):
 
   def render(self):
     colour = "Blue"
+    if self.reserved:
+      colour = "#000080"
     if self.assigned:
-      colour = "Red" if self.dispatched_to is not None else "Orange"
+      colour = "Red" if self.deployed else "Orange"
     return { "color": colour, "radius": "1" }
 
   # TODO implement more efficiently?
   def __get_event_agent(self):
     for a in self.model.schedule.agents:
-      if isinstance(a, PublicOrderEventAgent) and a.name == self.dispatched_to:
+      if isinstance(a, PublicOrderEventAgent) and a.name == self.assigned_to:
         return a
-    raise ValueError("no event associated with PSU agent from %s assigned to %s" % (self.name, self.dispatched_to))
+    raise ValueError("no event associated with PSU agent from %s assigned to %s" % (self.name, self.assigned_to))
 
   def __get_force_agent(self):
     for a in self.model.schedule.agents:
@@ -79,7 +80,7 @@ class ForcePSUAgent(GeoAgent):
       # better displayed near rather than on?
       self.dest = None
       # if arriving at event, find the associated event and update it
-      if self.dispatched_to is not None:
+      if self.assigned_to is not None:
         self.deployed = True
         e = self.__get_event_agent()
         e.resources_present += PSU_OFFICERS
@@ -125,7 +126,7 @@ class PublicOrderEventAgent(GeoAgent):
       for a in psus:
         self.resources_present -= PSU_OFFICERS
         a.dest = a.home
-        a.dispatched_to = None
+        a.assigned_to = None
         a.deployed = False
 
   def render(self):
@@ -134,5 +135,5 @@ class PublicOrderEventAgent(GeoAgent):
     return { "radius": 4, "color": "Gray" }
 
   def __get_psu_agents(self):
-    return [a for a in self.model.schedule.agents if isinstance(a, ForcePSUAgent) and a.dispatched_to == self.name]
+    return [a for a in self.model.schedule.agents if isinstance(a, ForcePSUAgent) and a.assigned_to == self.name]
 
