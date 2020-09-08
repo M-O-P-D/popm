@@ -63,12 +63,16 @@ model_params = {
     5,
     description="The timestep length in minutes"
   ),
-  "seed": 19937
+  "initialisation": UserSettableParameter(
+    "choice",
+    "Initialisation", value="Fixed seed",
+    choices=["Fixed seed", "Random seed", "Breaking Point"]
+  )
 }
 
 chart_element = ChartModule(
   [
-    {"Label": "Assigned", "Color": "Black", "Description": "canuseeme?" },
+    {"Label": "Assigned", "Color": "Black" },
     {"Label": "Deployed", "Color": "Blue"},
     {"Label": "Shortfall", "Color": "Orange"},
     {"Label": "Deficit", "Color": "Red"},

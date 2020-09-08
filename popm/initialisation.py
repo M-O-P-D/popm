@@ -96,8 +96,8 @@ def create_psu_data(forces, staff_absence):
   # must have at least 200 officers per function (assume dont have to be POP trained)
   presence = 1-staff_absence/100
   avail = 0
-  for i in range(len(CORE_FUNCTIONS)):
-    avail += np.minimum(forces[CORE_FUNCTIONS[i]+"_POP"] * presence, np.maximum(0, forces[CORE_FUNCTIONS[i]] * presence - CORE_FUNCTIONS_MIN[i]))
+  for i, f in enumerate(CORE_FUNCTIONS):
+    avail += np.minimum(forces[f+"_POP"] * presence, np.maximum(0, forces[f] * presence - CORE_FUNCTIONS_MIN[i]))
 
   forces["available_psus"] = np.floor(avail / PSU_OFFICERS).astype(int)
   forces["dispatched_psus"] = 0
@@ -140,13 +140,14 @@ def create_psu_data(forces, staff_absence):
   return psu_data
 
 
-def initialise_event_data(no_of_events, event_resources, event_start, event_duration, force_data):
+def initialise_event_data(model, no_of_events, event_resources, event_start, event_duration, force_data):
   # activate events as per parameters
   # TODO use only Model RNG for reproducibility
-  random.seed(19937)
-  active = random.sample(list(force_data.index.values), min(no_of_events, len(force_data)))
+  #random.seed(19937)
+  if model.event_locations == None:
+    model.event_locations = model.random.sample(list(force_data.index.values), min(no_of_events, len(force_data)))
 
-  event_data = force_data.loc[active, ["name", "Alliance", "geometry"]].copy()
+  event_data = force_data.loc[model.event_locations, ["name", "Alliance", "geometry"]].copy()
 
   for i, r in event_data.iterrows():
     min_x, min_y, max_x, max_y = r.geometry.bounds
