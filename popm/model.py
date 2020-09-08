@@ -15,7 +15,7 @@ class PublicOrderPolicing(Model):
   An agent-based model of resource allocation in response to public order events.
   Source code at https://github.com/M-O-P-D/popm
   """
-  def __init__(self, no_of_events, event_resources, event_start, event_duration, staff_absence, timestep, seed=None): #params...
+  def __init__(self, no_of_events, event_resources, event_start, event_duration, staff_absence, timestep, initialisation): #params...
 
     self.log = ["Initialising model"]
 
@@ -26,8 +26,14 @@ class PublicOrderPolicing(Model):
           "Assigned": get_num_assigned,
           "Deployed": get_num_deployed,
           "Shortfall": get_num_shortfall,
-          "Deficit": get_num_deficit,
+          "Deficit": get_num_deficit
       })
+
+    seed = 19937 if initialisation == "Fixed seed" else None
+    self.reset_randomizer(seed)
+    # for fixed events
+    self.event_locations = [0, 4, 13] if initialisation == "Breaking Point" else None
+
     # Set up the grid and schedule.
 
     # Use SimultaneousActivation which simulates all the cells
@@ -59,7 +65,7 @@ class PublicOrderPolicing(Model):
       self.schedule.add(agent)
 
     # then the public order event data and agents
-    event_data = initialise_event_data(no_of_events, event_resources, event_start, event_duration, force_data)
+    event_data = initialise_event_data(self, no_of_events, event_resources, event_start, event_duration, force_data)
     self.log.append("Events started in %s" % event_data["name"].values)
     factory = AgentCreator(PublicOrderEventAgent, { "model": self})
     event_agents = factory.from_GeoDataFrame(event_data)
@@ -67,8 +73,7 @@ class PublicOrderPolicing(Model):
     for agent in event_agents:
       self.schedule.add(agent)
 
-    self.running = True # doesnt work
-    # self.log.append("running=%s" % self.running)
+    self.running = True # doesnt work?
 
     # now assign PSUs to events
     allocate(event_agents, force_agents, psu_agents, self.distances, self.log)
