@@ -3,7 +3,6 @@ import numpy as np
 import pandas as pd
 import geopandas as gpd
 
-import random
 from math import ceil, sqrt
 
 from shapely.geometry import Point
@@ -143,14 +142,14 @@ def create_psu_data(forces, staff_absence):
   return psu_data
 
 
-def initialise_event_data(event_locations, event_resources, event_start, event_duration, force_data):
+def initialise_event_data(model, event_resources, event_start, event_duration, force_data):
   # activate events as per parameters
-  event_data = force_data.loc[event_locations, ["name", "Alliance", "geometry"]].copy()
+  event_data = force_data.loc[model.event_locations, ["name", "Alliance", "geometry"]].copy()
 
   for i, r in event_data.iterrows():
     min_x, min_y, max_x, max_y = r.geometry.bounds
     while True:
-      p = Point([random.uniform(min_x, max_x), random.uniform(min_y, max_y)])
+      p = Point([model.random.uniform(min_x, max_x), model.random.uniform(min_y, max_y)])
       if p.within(r.geometry):
         event_data.at[i, "geometry"] = p
         break
