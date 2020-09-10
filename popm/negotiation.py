@@ -36,6 +36,7 @@ def mark_psu_assigned(force_name, event_agent, psu_agents, include_reserved=Fals
   if len(avail) == 0:
     return #raise ValueError("no psu available for dispatch from %s to %s" % (force_name, event_location))
   avail[0].assigned = True
+  avail[0].dispatched = False
   avail[0].deployed = False
   avail[0].assigned_to = event_agent.name #event_location
   # use wkt string to avoid TypeError: Object of type Point is not JSON serializable

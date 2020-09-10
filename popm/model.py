@@ -70,7 +70,7 @@ class PublicOrderPolicing(Model):
     # otherwise random (with or without fixed seed, see above)
     else:
       self.event_locations = self.random.sample(list(force_data.index.values), min(no_of_events, len(force_data)))
-    event_data = initialise_event_data(self.event_locations, event_resources, event_start, event_duration, force_data)
+    event_data = initialise_event_data(self, event_resources, event_start, event_duration, force_data)
     self.log.append("Events started in %s" % event_data["name"].values)
     factory = AgentCreator(PublicOrderEventAgent, { "model": self})
     event_agents = factory.from_GeoDataFrame(event_data)
