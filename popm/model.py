@@ -97,8 +97,15 @@ class PublicOrderPolicing(Model):
     self.schedule.step()
     #print("total force agents = %d" % len([a for a in self.schedule.agents if isinstance(a, ForceAreaAgent)]))
 
+  # This override is not called running in server mode, but it is called in batch mode
+  def run_model(self):
+    while self.running:
+      self.step()
+      # flush the log
+      for msg in self.log:
+        print(msg)
+      self.log = []
+      # TODO stop when all police are back home i.e. not assigned, rather than at a fixed step
+      if self.schedule.steps > 50:
+        self.running = False
 
-# if __name__ == "__main__":
-#   (b,c) = _load_data()
-#   print(b.head())
-#   print(c.head())
