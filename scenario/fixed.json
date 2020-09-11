@@ -1,0 +1,9 @@
+{
+  "no_of_events": 3,
+  "event_resources": 2000,
+  "event_start": 2,
+  "event_duration": 8,
+  "staff_absence": 0.02,
+  "timestep": 15,
+  "event_locations": "Fixed"
+}

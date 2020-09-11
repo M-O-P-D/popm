@@ -8,14 +8,9 @@
 
 ## Status
 
-- [X] Initialise available PSUs in each area according to available resources and limits
-- [X] Allocate PSUs within event's force area
-- [X] Allocate PSUs as necessary from other force areas within alliance
-- [X] Allocate PSUs if necessary from force areas outside alliance
-- [X] Move PSUs to events
-- [X] Return PSUs when events over
+`popm` is under development.
 
-popm is deployed as an app service [here](https://popm.azurewebsites.net)
+As well as the source code here, it's available as a docker container and it's also deployed as an app service [here](https://popm.azurewebsites.net)
 
 ## Developer Setup
 
@@ -41,10 +36,10 @@ which automatically opens a browser window
 
 ### Batch Mode
 
-For a non-graphical batch run for multiple scenarios and/or more detailed data collection: 
+For a non-browser batch run for multiple scenarios and/or more detailed data collection:
 
 ```bash
-python -m popm.batch <scenario-file> <num_runs>
+python -m batch <scenario-file> [<num_runs>]
 ```
 
 ### Docker

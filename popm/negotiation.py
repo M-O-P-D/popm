@@ -14,19 +14,21 @@ def find_other_forces(forces, name, alliance, in_alliance=True):
       other.append(f)
   return other
 
-def rank(forces, name, distances, event_duration):
+def rank(forces, name, distances, event_end):
   """
   Ranks according to distance/cost and supply
   """
   # TODO make a property of the force
   mobilisation_time = 1
   # assuming duration in hours, this corresponds to 50km/h
-  mobilisation_speed = 50
+  mobilisation_speed = 50 # TODO merge with definition in PSU agent
+
+  # TODO should we increase ranking for PSUs that can get there by *start* of event
 
   ranks = []
   for f in forces:
     despatch_time = mobilisation_time + distances.at[f.name, name] / mobilisation_speed
-    if despatch_time < event_duration:
+    if despatch_time < event_end:
       ranks.append((f.name, f.available_psus / despatch_time))
   return sorted(ranks, key=lambda t: -t[1])
 
@@ -71,7 +73,7 @@ def allocate(event_agents, force_agents, psu_agents, distances, log):
     # if not fully resourced, request from alliance member
     if req > 0:
       forces = find_other_forces(force_agents, a.name, a.Alliance)
-      ranks = rank(forces, a.name, distances, a.time_to_start) # TODO confirm if should be start, end or both
+      ranks = rank(forces, a.name, distances, a.time_to_end) # TODO do we need to increase ranking if
       for r in ranks:
         f = find_force(force_agents, r[0])
         allocated = 0
@@ -88,7 +90,7 @@ def allocate(event_agents, force_agents, psu_agents, distances, log):
     if req > 0:
       # allocations from further afield
       forces = find_other_forces(force_agents, a.name, a.Alliance, in_alliance=False)
-      ranks = rank(forces, a.name, distances, a.time_to_start) # TODO confirm if should be start, end or both
+      ranks = rank(forces, a.name, distances, a.time_to_end) # TODO confirm if should be start, end or both
       for r in ranks:
         f = find_force(force_agents, r[0])
         allocated = 0
