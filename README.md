@@ -31,15 +31,25 @@ Firstly, install dependencies
 pip install -r requirements.txt
 ```
 
-Then, run the server:
+### Server Mode
 
+To run a graphical web-based front end:
 ```bash
 mesa runserver .
+```
+which automatically opens a browser window
+
+### Batch Mode
+
+For a non-graphical batch run for multiple scenarios and/or more detailed data collection: 
+
+```bash
+python -m popm.batch <scenario-file> <num_runs>
 ```
 
 ### Docker
 
-See the [Dockerfile](./Dockerfile)
+See the [Dockerfile](./Dockerfile) which runs in server mode.
 
 e.g.
 
