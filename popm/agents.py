@@ -84,7 +84,7 @@ class ForcePSUAgent(GeoAgent):
     if self.assigned and not self.dispatched:
       e = self.__get_event_agent()
       travel_time = dist / ForcePSUAgent.SPEED / 1000.0
-      if travel_time >= e.time_to_start + self.model.timestep:
+      if travel_time > e.time_to_start - self.model.timestep:
         self.dispatched = True
 
     # case 2: assigned and dispatched, i.e. en route to event

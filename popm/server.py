@@ -70,16 +70,16 @@ model_params = {
   )
 }
 
-chart_element = ChartModule(
-  [
-    {"Label": "Assigned", "Color": "Black" },
-    {"Label": "Deployed", "Color": "Blue"},
-    {"Label": "Shortfall", "Color": "Orange"},
-    {"Label": "Deficit", "Color": "Red"},
-  ]
-)
+# chart_element = ChartModule(
+#   [
+#     {"Label": "Assigned", "Color": "Black" },
+#     {"Label": "Deployed", "Color": "Blue"},
+#     {"Label": "Shortfall", "Color": "Orange"},
+#     {"Label": "Deficit", "Color": "Red"},
+#   ]
+# )
 
 map_element = MapModule(portray_map, [52.9, -1.8], 6, 600, 600)
 console = LogElement()
 
-server = ModularServer(PublicOrderPolicing, [map_element, chart_element, console], "Public Order Policing Model", model_params)
+server = ModularServer(PublicOrderPolicing, [map_element, console], "Public Order Policing Model", model_params)

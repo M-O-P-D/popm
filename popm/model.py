@@ -7,7 +7,7 @@ from mesa_geo import GeoSpace
 from .agents import ForceAreaAgent, ForcePSUAgent, PublicOrderEventAgent
 from .initialisation import load_data, create_psu_data, initialise_event_data
 from .negotiation import allocate
-from .data_collection import get_num_assigned, get_num_deployed, get_num_shortfall, get_num_deficit
+from .data_collection import * #get_num_assigned, get_num_deployed, get_num_shortfall, get_num_deficit
 
 class PublicOrderPolicing(Model):
   # below ends up in the "About" menu
@@ -27,6 +27,13 @@ class PublicOrderPolicing(Model):
           "Deployed": get_num_deployed,
           "Shortfall": get_num_shortfall,
           "Deficit": get_num_deficit
+      },
+      agent_reporters={
+        "Time": lambda _: self.time(),
+        "Active": lambda a: (a.time_to_start <= 0.0 and a.time_to_end >= 0.0) if isinstance(a, PublicOrderEventAgent) else None,
+        "Required": lambda a: a.resources_required if isinstance(a, PublicOrderEventAgent) else None,
+        "Allocated": lambda a: a.resources_allocated if isinstance(a, PublicOrderEventAgent) else None,
+        "Present": lambda a: a.resources_present if isinstance(a, PublicOrderEventAgent) else None,
       })
 
     if event_locations == "Fixed":
@@ -62,7 +69,6 @@ class PublicOrderPolicing(Model):
     for agent in psu_agents:
       self.schedule.add(agent)
 
-
     # then the public order event data and agents
     # for fixed events
     if event_locations == "Breaking Point":
@@ -90,12 +96,8 @@ class PublicOrderPolicing(Model):
     """
     Have the scheduler advance each cell by one step
     """
-    # ForceAreaAgent, ForcePSUAgent, PublicOrderEventAgent
-    #event_agents = [a for a in self.shedule.agents if isinstance(a, PublicOrderEventAgent)]
-
     self.datacollector.collect(self)
     self.schedule.step()
-    #print("total force agents = %d" % len([a for a in self.schedule.agents if isinstance(a, ForceAreaAgent)]))
 
   # This override is not called running in server mode, but it is called in batch mode
   def run_model(self):
@@ -105,7 +107,9 @@ class PublicOrderPolicing(Model):
       for msg in self.log:
         print(msg)
       self.log = []
-      # TODO stop when all police are back home i.e. not assigned, rather than at a fixed step
-      if self.schedule.steps > 50:
+      # stop when all police are back home i.e. not assigned or dispatched
+      active_psus = [a for a in self.schedule.agents if isinstance(a, ForcePSUAgent) and (a.assigned == True or a.dispatched == True)]
+      if not any(active_psus):
+        print("All PSUs inactive at time %.2f, halting model" % self.time())
         self.running = False
 
