@@ -22,33 +22,29 @@ class PublicOrderPolicing(Model):
     # hourly (input is minutes)
     self.timestep = timestep / 60
 
-    self.datacollector = DataCollector(model_reporters={
-          "Assigned": get_num_assigned,
-          "Deployed": get_num_deployed,
-          "Shortfall": get_num_shortfall,
-          "Deficit": get_num_deficit
+    self.datacollector = DataCollector(
+      model_reporters={
+        "Assigned": get_num_assigned,
+        "Deployed": get_num_deployed,
+        "Shortfall": get_num_shortfall,
+        "Deficit": get_num_deficit
       },
       agent_reporters={
-        "Time": lambda _: self.time(),
-        "Active": lambda a: (a.time_to_start <= 0.0 and a.time_to_end >= 0.0) if isinstance(a, PublicOrderEventAgent) else None,
-        "Required": lambda a: a.resources_required if isinstance(a, PublicOrderEventAgent) else None,
-        "Allocated": lambda a: a.resources_allocated if isinstance(a, PublicOrderEventAgent) else None,
-        "Present": lambda a: a.resources_present if isinstance(a, PublicOrderEventAgent) else None,
-      })
+        # "Time": lambda _: self.time(),
+        # "Active": lambda a: (a.time_to_start <= 0.0 and a.time_to_end >= 0.0) if isinstance(a, PublicOrderEventAgent) else None,
+        # "Required": lambda a: a.resources_required if isinstance(a, PublicOrderEventAgent) else None,
+        # "Allocated": lambda a: a.resources_allocated if isinstance(a, PublicOrderEventAgent) else None,
+        "Deployed": lambda a: a.resources_present if isinstance(a, PublicOrderEventAgent) else None
+      }
+    )
 
     if event_locations == "Fixed":
       self.reset_randomizer(19937)
 
     # Set up the grid and schedule.
-
-    # Use SimultaneousActivation which simulates all the cells
-    # computing their next state simultaneously.  This needs to
-    # be done because each cell's next state depends on the current
-    # state of all its neighbors -- before they've changed.
     self.schedule = SimultaneousActivation(self)
 
-    # Use a multi grid so that >1 agent can occupy the same location
-    self.grid = GeoSpace()
+    self.grid = GeoSpace(crs="epsg:27700")
 
     # Ultra Generalised Clipped otherwise too much rendering
     force_data, self.distances = load_data()
@@ -56,14 +52,14 @@ class PublicOrderPolicing(Model):
     psu_data = create_psu_data(force_data, staff_absence)
 
     # Set up the force agents
-    factory = AgentCreator(ForceAreaAgent, {"model": self})
+    factory = AgentCreator(ForceAreaAgent, {"model": self}, crs="epsg:27700")
     force_agents = factory.from_GeoDataFrame(force_data)
     self.grid.add_agents(force_agents)
     for agent in force_agents:
       self.schedule.add(agent)
 
     # Set up the PSU agents
-    factory = AgentCreator(ForcePSUAgent, {"model": self})
+    factory = AgentCreator(ForcePSUAgent, {"model": self}, crs="epsg:27700")
     psu_agents = factory.from_GeoDataFrame(psu_data)
     self.grid.add_agents(psu_agents)
     for agent in psu_agents:
@@ -78,7 +74,7 @@ class PublicOrderPolicing(Model):
       self.event_locations = self.random.sample(list(force_data.index.values), min(no_of_events, len(force_data)))
     event_data = initialise_event_data(self, event_resources, event_start, event_duration, force_data)
     self.log.append("Events started in %s" % event_data["name"].values)
-    factory = AgentCreator(PublicOrderEventAgent, { "model": self})
+    factory = AgentCreator(PublicOrderEventAgent, { "model": self}, crs="epsg:27700")
     event_agents = factory.from_GeoDataFrame(event_data)
     self.grid.add_agents(event_agents)
     for agent in event_agents:

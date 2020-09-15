@@ -7,7 +7,8 @@ from math import ceil, sqrt
 
 from shapely.geometry import Point
 from shapely.ops import cascaded_union
-import shapely.wkt
+
+from .utils import serialise_geometry, deserialise_geometry
 
 PSU_OFFICERS = 25
 
@@ -72,8 +73,7 @@ def load_data():
 
   # add centroid column, but not as Shapely object as will get a serialisation error
   force_data = force_data.merge(centroids.rename({"geometry": "centroid"}, axis=1)[["name", "centroid"]], on="name")
-  #force_data.centroid = force_data.centroid.to_crs(epsg=27700)
-  force_data.centroid = force_data.centroid.apply(lambda p: p.wkt)
+  force_data.centroid = force_data.centroid.apply(lambda p: serialise_geometry(p))
 
   # compute distance matrix
   # convert to different projection for distance computation
@@ -125,12 +125,13 @@ def create_psu_data(forces, staff_absence):
     rows = ceil(sqrt(len(single_psu_data)))
     j = 0
     for idx, r in single_psu_data.iterrows():
-      p = shapely.wkt.loads(r["centroid"])
+      p = deserialise_geometry(r["centroid"])
       x = p.x - rows * dx / 2
       y = p.y - rows * dy / 2
 
       # # NB // is integer division
       psu_data.at[idx, "geometry"] = Point([x + j // rows * dx, y + j % rows * dy])
+      #print(psu_data.at[idx, "geometry"])
       j = j + 1
 
   psu_data["assigned_to"] = None

@@ -9,6 +9,13 @@ def get_num_assigned(model):
       assigned += a.resources_allocated
   return assigned
 
+def get_deployed_per_agent(model):
+  deployed = {}
+  for a in model.schedule.agents:
+    if isinstance(a, PublicOrderEventAgent):
+      deployed[a.name] = a.resources_present
+  return deployed
+
 def get_num_deployed(model):
   deployed = 0
   for a in model.schedule.agents:
