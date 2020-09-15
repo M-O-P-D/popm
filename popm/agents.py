@@ -1,11 +1,11 @@
 from mesa_geo.geoagent import GeoAgent
 
 from shapely.geometry import Point
-import shapely.wkt
 
 from math import atan2, sin, cos, sqrt
 
 from .initialisation import PSU_OFFICERS
+from .utils import serialise_geometry, deserialise_geometry
 
 class ForceAreaAgent(GeoAgent):
 
@@ -21,15 +21,17 @@ class ForceAreaAgent(GeoAgent):
 
   def render(self):
     if self.dispatched_psus == 0:
-      return { "color": "#BFBFBF" }
+      colour = "#BFBFBF"
     elif self.available_psus > 0:
-      return { "color": "#9F9F9F" }
+      colour = "#9F9F9F"
     else:
-      return { "color": "#7F7F7F" }
+      colour = "#7F7F7F"
+    return { "color": colour, "Layer": 0 }
 
 class ForcePSUAgent(GeoAgent):
 
   SPEED = 50.0 # in kilometres per hour
+  MOBILISATION_TIME = 1.0 # hours
 
   def __init__(self, unique_id, model, shape):
 
@@ -39,7 +41,8 @@ class ForcePSUAgent(GeoAgent):
     self.dispatched = False
     self.deployed = False
     self.dest = None
-    self.home = shape.wkt
+    self.home = serialise_geometry(self.shape)
+
     # TODO Can't use a ref to agents directly as its not JSON serialisable
     # self.event_id = None
     # self.force_id = None
@@ -55,7 +58,7 @@ class ForcePSUAgent(GeoAgent):
       colour = "#000080"
     if self.assigned:
       colour = "Red" if self.deployed else "Orange"
-    return { "color": colour, "radius": "1" }
+    return { "color": colour, "radius": "1", "Layer": 1 }
 
   # TODO implement more efficiently?
   def __get_event_agent(self):
@@ -73,11 +76,14 @@ class ForcePSUAgent(GeoAgent):
 
   def __move(self, delta):
 
+    if self.model.time() < ForcePSUAgent.MOBILISATION_TIME:
+      return
+
     # case 0: not assigned and at base
     if (not self.assigned and not self.dispatched) or self.dest is None:
       return
 
-    dest = shapely.wkt.loads(self.dest)
+    dest = deserialise_geometry(self.dest)
     dist = sqrt((self.shape.x - dest.x)**2 + (self.shape.y - dest.y)**2)
 
     # case 1: assigned but not yet dispatched...potentially falls though to case 2
@@ -130,23 +136,6 @@ class ForcePSUAgent(GeoAgent):
       self.shape = Point([x, y])
 
 
-    # dest = shapely.wkt.loads(self.dest)
-    # dist = sqrt((self.shape.x - dest.x)**2 + (self.shape.y - dest.y)**2)
-    # e = self.__get_event_agent()
-
-    # #print(e.time_to_start, self.model.timestep)
-    # if e is not None and not self.dispatched:
-    #   travel_time = dist / ForcePSUAgent.SPEED / 1000.0
-    #   if travel_time >= e.time_to_start + self.model.timestep:
-    #     self.dispatched = True
-        #print("dispatching %s PSU to %s: %f / %f" % (self.name, e.name, travel_time, e.time_to_start + self.model.timestep))
-      # else:
-      #   #print("NOT dispatching %s PSU to %s: %f / %f" % (self.name, e.name, travel_time, e.time_to_start + self.model.timestep))
-      #   return self.shape
-
-    # <= 1 step away
-
-
 class PublicOrderEventAgent(GeoAgent):
 
   """ Agent representing a reference point in the force area to compute costs (distances) and track public order events within the force area """
@@ -179,7 +168,7 @@ class PublicOrderEventAgent(GeoAgent):
   def render(self):
     if self.time_to_end > 0:
       return { "radius": 4, "color": "Red" if self.resources_allocated < self.resources_required else "Black"}
-    return { "radius": 4, "color": "Gray" }
+    return { "radius": 4, "color": "Gray", "Layer": 0 }
 
   def __get_psu_agents(self):
     return [a for a in self.model.schedule.agents if isinstance(a, ForcePSUAgent) and a.assigned_to == self.name]
