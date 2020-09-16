@@ -14,7 +14,6 @@ def get_name(model, id):
       return a.name
   return str(id)
 
-
 def main(config, runs):
 
   for _ in range(runs):
