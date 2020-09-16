@@ -68,7 +68,6 @@ def load_data():
   # TODO the geojson contains latlong and BNG coords for centroids so could directly compute distances from east/northings (if simpler)
 
   # compute centroids and shift index so that agent ids arent duplicated
-  # for now the centroids dont have the force data
   centroids = gpd.GeoDataFrame(gdf[["name", "Alliance"]], geometry=gpd.points_from_xy(gdf.LONG, gdf.LAT), crs = {"init": "epsg:4326"}).to_crs(epsg=27700)
 
   # add centroid column, but not as Shapely object as will get a serialisation error
@@ -78,12 +77,14 @@ def load_data():
   # compute distance matrix
   # convert to different projection for distance computation
   # see https://gis.stackexchange.com/questions/293310/how-to-use-geoseries-distance-to-get-the-right-answer
-  m = np.zeros((len(centroids), len(centroids)))
-  for i in range(len(centroids)):
-    m[i,:] = centroids.distance(centroids.geometry[i]) / 1000.0
-  distances = pd.DataFrame(m, columns=centroids.name, index=centroids.name)
+  # m = np.zeros((len(centroids), len(centroids)))
+  # for i in range(len(centroids)):
+  #   m[i,:] = centroids.distance(centroids.geometry[i]) / 1000.0
+  # distances = pd.DataFrame(m, columns=centroids.name, index=centroids.name)
+  distances = pd.read_csv("./data/centroid_distances.csv").set_index("name")
+  times = pd.read_csv("./data/centroid_times.csv").set_index("name")
 
-  return force_data, distances
+  return force_data, distances, times
 
 def create_psu_data(forces, staff_absence):
 
