@@ -1,3 +1,4 @@
+# %%
 
 import os
 import json
@@ -23,7 +24,7 @@ query = [
   ("point", "53.9261829,-1.8270279"),
   ("point", "53.9233771,-1.8003073"),
   ("vehicle", "car"),
-  ("calc_points", "false"),
+  ("calc_points", "true"),
 ]
 
 response = requests.get(url(endpoint, query))
@@ -39,6 +40,7 @@ else:
     time = result["paths"][0]["time"] / 3600000 # h 
     print("%.2fkm in %.2fh" % (dist, time))
 
+# %%
 
 body = json.dumps({
   "from_points": [

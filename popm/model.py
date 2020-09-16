@@ -47,7 +47,7 @@ class PublicOrderPolicing(Model):
     self.grid = GeoSpace(crs="epsg:27700")
 
     # Ultra Generalised Clipped otherwise too much rendering
-    force_data, self.distances = load_data()
+    force_data, self.distances, self.t= load_data()
     # create PSU dataset (which appends to force data too, so must do this *before* creating the force agents)
     psu_data = create_psu_data(force_data, staff_absence)
 
