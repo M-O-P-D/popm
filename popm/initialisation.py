@@ -8,7 +8,7 @@ from math import ceil, sqrt
 from shapely.geometry import Point
 from shapely.ops import cascaded_union
 
-from .utils import serialise_geometry, deserialise_geometry
+from .utils import serialise_geometry, deserialise_geometry, bng2lonlat
 
 PSU_OFFICERS = 25
 
