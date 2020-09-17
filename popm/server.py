@@ -14,8 +14,8 @@ model_params = {
     "slider",
     "No. of public order events",
     3,
-    0,
-    50,
+    1,
+    40,
     1,
     description="The number of initial public order events"
   ),
