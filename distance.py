@@ -1,7 +1,5 @@
 # %%
 import os
-import json
-import requests
 import numpy as np
 from dotenv import load_dotenv, find_dotenv
 
@@ -9,14 +7,7 @@ from popm.initialisation import load_data
 from popm.utils import * 
 
 
-forces, euclidean_dists = load_data()
-
-print(euclidean_dists)
-
-body = {
-
-
-}
+forces, _dists, _times = load_data()
 
 print(forces.columns.values)
 
@@ -28,6 +19,8 @@ for _,r in forces.iterrows():
   #print(deserialise_geometry(r.centroid), end=" -> ")
   ll = bng2lonlat(deserialise_geometry(r.centroid))
   coords.append([ll.x, ll.y])
+
+print(coords)
 
 # %%
 
@@ -51,7 +44,7 @@ data = {
 
 params = {"key": os.getenv("GRAPHHOPPER_API_KEY")}
 
-response = requests.post(BASE_URL + "matrix", params=params, json=data)#, headers={"Content-Type": "application/json"})
+response = requests.post(BASE_URL + "matrix", params=params, json=data)
 
 if not response.ok:
   print(response.status_code, response.text)
