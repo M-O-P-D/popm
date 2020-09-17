@@ -8,11 +8,11 @@ from popm.model import PublicOrderPolicing
 
 from matplotlib import pyplot as plt
 
-def get_name(model, id):
+def get_name(model, unique_id):
   for a in model.schedule.agents:
-    if a.unique_id == id:
+    if a.unique_id == unique_id:
       return a.name
-  return str(id)
+  return str(unique_id)
 
 def main(config, runs):
 
@@ -43,11 +43,11 @@ def main(config, runs):
 
     fig, axs = plt.subplots(len(ids), sharex=True, figsize=(6,8))
 
-    for i, id in enumerate(ids):
-      df = agent_data.xs(id, level="AgentID")
+    for i, unique_id in enumerate(ids):
+      df = agent_data.xs(unique_id, level="AgentID")
 
       axs[i].plot(df.Time, df[cols])
-      axs[i].set_title(get_name(model, id))
+      axs[i].set_title(get_name(model, unique_id))
       #axs[i].set_xlabel("Time (h)")
       axs[i].set_ylabel("Officers")
     fig.legend(cols)
@@ -66,5 +66,5 @@ if __name__ == "__main__":
   # load config
   with open(args.config) as f:
     config = json.load(f)
-    
+
     main(config, args.runs)

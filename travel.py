@@ -37,7 +37,7 @@ else:
     print("no paths found")
   else:
     dist = result["paths"][0]["distance"] / 1000.0 #km
-    time = result["paths"][0]["time"] / 3600000 # h 
+    time = result["paths"][0]["time"] / 3600000 # h
     print("%.2fkm in %.2fh" % (dist, time))
 
 # %%
