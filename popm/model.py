@@ -43,11 +43,9 @@ class PublicOrderPolicing(Model):
 
     # Set up the grid and schedule.
     self.schedule = SimultaneousActivation(self)
-
     self.grid = GeoSpace(crs="epsg:27700")
 
-    # Ultra Generalised Clipped otherwise too much rendering
-    force_data, self.distances, self.t= load_data()
+    force_data, self.distances, self.travel_times = load_data()
     # create PSU dataset (which appends to force data too, so must do this *before* creating the force agents)
     psu_data = create_psu_data(force_data, staff_absence)
 
@@ -83,7 +81,7 @@ class PublicOrderPolicing(Model):
     self.running = True # doesnt work?
 
     # now assign PSUs to events
-    allocate(event_agents, force_agents, psu_agents, self.distances, self.log)
+    allocate(event_agents, force_agents, psu_agents, self.travel_times, self.log)
 
   def time(self):
     return self.schedule.steps * self.timestep

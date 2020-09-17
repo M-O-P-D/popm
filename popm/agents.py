@@ -30,7 +30,6 @@ class ForceAreaAgent(GeoAgent):
 
 class ForcePSUAgent(GeoAgent):
 
-  SPEED = 50.0 # in kilometres per hour
   MOBILISATION_TIME = 1.0 # hours
 
   def __init__(self, unique_id, model, shape):
@@ -42,6 +41,7 @@ class ForcePSUAgent(GeoAgent):
     self.deployed = False
     self.dest = None
     self.home = serialise_geometry(self.shape)
+    self.speed = 0.0
 
     # TODO Can't use a ref to agents directly as its not JSON serialisable
     # self.event_id = None
@@ -49,8 +49,7 @@ class ForcePSUAgent(GeoAgent):
 
   def step(self):
 
-    delta = ForcePSUAgent.SPEED * 1000 * self.model.timestep
-    self.__move(delta) #self.shape, self.dest, ForcePSUAgent.SPEED)
+    self.__move() #self.shape, self.dest, ForcePSUAgent.SPEED)
 
   def render(self):
     colour = "Blue"
@@ -74,29 +73,32 @@ class ForcePSUAgent(GeoAgent):
         return a
     raise ValueError("no force associated with PSU agent from %s" % self.name)
 
-  def __move(self, delta):
+  def __move(self):
 
     if self.model.time() < ForcePSUAgent.MOBILISATION_TIME:
       return
+
+    # max distance in a single timestep (in metres)
+    delta = self.speed * 1000 * self.model.timestep
 
     # case 0: not assigned and at base
     if (not self.assigned and not self.dispatched) or self.dest is None:
       return
 
     dest = deserialise_geometry(self.dest)
-    dist = sqrt((self.shape.x - dest.x)**2 + (self.shape.y - dest.y)**2)
+    euclidean_dist = sqrt((self.shape.x - dest.x)**2 + (self.shape.y - dest.y)**2)
 
     # case 1: assigned but not yet dispatched...potentially falls though to case 2
     if self.assigned and not self.dispatched:
       e = self.__get_event_agent()
-      travel_time = dist / ForcePSUAgent.SPEED / 1000.0
+      travel_time = euclidean_dist / self.speed / 1000.0
       if travel_time > e.time_to_start - self.model.timestep:
         self.dispatched = True
 
     # case 2: assigned and dispatched, i.e. en route to event
     if self.assigned and self.dispatched and not self.deployed:
       # if we arrive at event, update agents
-      if dist < delta:
+      if euclidean_dist < delta:
         e = self.__get_event_agent()
         # if arriving at event, find the associated event and update it
         self.deployed = True
@@ -123,17 +125,17 @@ class ForcePSUAgent(GeoAgent):
     # case 4: returning to base after event
     # otherwise, arriving home, find the associated force and make available again
     if not self.assigned and self.dispatched:
-      if dist < delta:
+      if euclidean_dist < delta:
         f = self.__get_force_agent()
         f.dispatched_psus -= 1
         f.available_psus += 1
         self.dispatched = False
         self.shape = dest
-
-      angle = atan2(dest.y - self.shape.y, dest.x - self.shape.x)
-      x = self.shape.x + delta * cos(angle)
-      y = self.shape.y + delta * sin(angle)
-      self.shape = Point([x, y])
+      else:
+        angle = atan2(dest.y - self.shape.y, dest.x - self.shape.x)
+        x = self.shape.x + delta * cos(angle)
+        y = self.shape.y + delta * sin(angle)
+        self.shape = Point([x, y])
 
 
 class PublicOrderEventAgent(GeoAgent):
