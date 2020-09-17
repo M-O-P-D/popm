@@ -1,10 +1,9 @@
 # %%
 import os
-import numpy as np
 from dotenv import load_dotenv, find_dotenv
 
 from popm.initialisation import load_data
-from popm.utils import * 
+from popm.utils import *
 
 
 forces, _dists, _times = load_data()
@@ -25,9 +24,6 @@ print(coords)
 # %%
 
 import requests
-import numpy as np
-from dotenv import load_dotenv, find_dotenv
-import json
 
 # API key should be in .env
 load_dotenv(find_dotenv())
@@ -50,12 +46,11 @@ if not response.ok:
 
 result = response.json()
 
-# %%
-
 print(result["polygons"][0]["type"])
 print(result["polygons"][0]["geometry"]["type"])
 print(len(result["polygons"][0]["geometry"]["coordinates"]))
 print(len(result["polygons"][0]["geometry"]["coordinates"][0]))
+
 # %%
 from shapely.geometry import shape, GeometryCollection
 import geopandas as gpd

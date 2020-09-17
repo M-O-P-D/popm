@@ -1,7 +1,7 @@
 
 
 import pyproj
-from shapely.geometry import mapping, shape
+from shapely.geometry import shape
 from shapely.ops import transform
 import shapely.wkt
 
@@ -17,8 +17,8 @@ def deserialise_geometry(wkt):
   return shapely.wkt.loads(wkt)
 
 def bng2lonlat(shape):
-  return transform(_proj_bng2lonlat.transform, shape)  
+  return transform(_proj_bng2lonlat.transform, shape)
 
 def lonlat2bng(shape):
-  return transform(_proj_lonlat2bng.transform, shape)  
+  return transform(_proj_lonlat2bng.transform, shape)
 

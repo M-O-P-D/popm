@@ -8,7 +8,7 @@ from math import ceil, sqrt
 from shapely.geometry import Point
 from shapely.ops import cascaded_union
 
-from .utils import serialise_geometry, deserialise_geometry, bng2lonlat
+from .utils import serialise_geometry, deserialise_geometry
 
 PSU_OFFICERS = 25
 
@@ -72,7 +72,7 @@ def load_data():
 
   # add centroid column, but not as Shapely object as will get a serialisation error
   force_data = force_data.merge(centroids.rename({"geometry": "centroid"}, axis=1)[["name", "centroid"]], on="name")
-  force_data.centroid = force_data.centroid.apply(lambda p: serialise_geometry(p))
+  force_data.centroid = force_data.centroid.apply(serialise_geometry)
 
   # compute distance matrix
   # convert to different projection for distance computation

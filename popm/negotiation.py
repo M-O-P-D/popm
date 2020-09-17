@@ -1,5 +1,5 @@
 from math import sqrt
-from .utils import serialise_geometry, deserialise_geometry
+from .utils import serialise_geometry
 from .initialisation import PSU_OFFICERS
 from .agents import ForcePSUAgent
 

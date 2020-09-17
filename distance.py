@@ -4,7 +4,7 @@ import numpy as np
 from dotenv import load_dotenv, find_dotenv
 
 from popm.initialisation import load_data
-from popm.utils import * 
+from popm.utils import *
 
 
 forces, _dists, _times = load_data()
@@ -25,8 +25,6 @@ print(coords)
 # %%
 
 import requests
-import numpy as np
-from dotenv import load_dotenv, find_dotenv
 
 # API key should be in .env
 load_dotenv(find_dotenv())
