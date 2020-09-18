@@ -43,13 +43,18 @@ class CustomChartModule(VisualizationElement):
 
     """
 
-    package_includes = ["Chart.min.js", "ChartModule.js"]
+    package_includes = ["Chart.min.js"]
+    # symlink the local includes into the root directory
+    local_includes = ["CustomChartModule.js"]
 
     def __init__(
         self,
-        series,
+        title,
+        x_title,
+        y_title,
+        nseries,
         canvas_height=200,
-        canvas_width=500,
+        canvas_width=600,
         data_collector_name="datacollector",
     ):
         """
@@ -61,19 +66,20 @@ class CustomChartModule(VisualizationElement):
             data_collector_name: Name of the DataCollector to use.
         """
 
-        self.series = series
+        # dummy series labels
+        self.series = [ {"Label": "Series %d"% s, "Color": "Blue" }  for s in range(nseries) ]
         self.canvas_height = canvas_height
         self.canvas_width = canvas_width
         self.data_collector_name = data_collector_name
 
         series_json = json.dumps(self.series)
-        new_element = "new ChartModule({}, {},  {})"
-        new_element = new_element.format(series_json, canvas_width, canvas_height)
+        new_element = 'new CustomChartModule("{}", "{}", "{}", {}, {},  {})' \
+            .format(title, x_title, y_title, series_json, canvas_width, canvas_height)
         self.js_code = "elements.push(" + new_element + ");"
 
     def render(self, model):
         data_collector = getattr(model, self.data_collector_name)
-        # dodgy
+        # dodgyc
         try:
           allvals = data_collector._agent_records.get(model.schedule.steps-1, {})  # Latest value
           vals = [v for v in allvals if v[2] is not None]
@@ -82,5 +88,5 @@ class CustomChartModule(VisualizationElement):
           vals=[]
         values = [0] * len(self.series)
         for i, v in enumerate(vals):
-          values[i] = v[2]
+          values[i] = v[2] / model.event_resources
         return values
