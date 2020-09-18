@@ -1,4 +1,4 @@
-var CustomChartModule = function(title, x_title, y_title, series, canvas_width, canvas_height) {
+var CustomChartModule = function(title, x_title, y_title, dt, series, canvas_width, canvas_height) {
     // Create the tag:
     var canvas_tag = "<canvas width='" + canvas_width + "' height='" + canvas_height + "' ";
     canvas_tag += "style='border:1px dotted'></canvas>";
@@ -86,6 +86,8 @@ var CustomChartModule = function(title, x_title, y_title, series, canvas_width, 
         data: chartData,
         options: chartOptions 
     });
+
+    var dt = dt;
 
     this.render = function(data) {
         chart.data.labels.push(control.tick);

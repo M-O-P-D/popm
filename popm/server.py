@@ -72,8 +72,12 @@ model_params = {
 }
 
 chart_element = CustomChartModule(
+  "Event Resourcing",
+  "Timestep",
+  "Deployed (%)",
+  model_params["timestep"].value / 60.0, # if this changes, the value doesnt get updated in the CustomChartModule, sadly
   40,
-  500,
+  400,
   600
 )
 

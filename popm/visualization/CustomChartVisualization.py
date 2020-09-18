@@ -52,6 +52,7 @@ class CustomChartModule(VisualizationElement):
         title,
         x_title,
         y_title,
+        dt,
         nseries,
         canvas_height=200,
         canvas_width=600,
@@ -73,8 +74,8 @@ class CustomChartModule(VisualizationElement):
         self.data_collector_name = data_collector_name
 
         series_json = json.dumps(self.series)
-        new_element = 'new CustomChartModule("{}", "{}", "{}", {}, {},  {})' \
-            .format(title, x_title, y_title, series_json, canvas_width, canvas_height)
+        new_element = 'new CustomChartModule("{}", "{}", "{}", {}, {}, {},  {})' \
+            .format(title, x_title, y_title, dt, series_json, canvas_width, canvas_height)
         self.js_code = "elements.push(" + new_element + ");"
 
     def render(self, model):
