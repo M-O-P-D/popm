@@ -14,7 +14,8 @@ class ForceAreaAgent(GeoAgent):
 
     super().__init__(unique_id, model, shape)
 
-    #self.available_psus = 0
+    self.available_psus = 0
+    self.dispatched_psus = 0
 
   def step(self):
     pass
