@@ -8,6 +8,7 @@ from .visualization.CustomChartVisualization import CustomChartModule
 
 from .portrayal import portray_map
 from .model import PublicOrderPolicing
+from .routemodel import RouteModel
 
 model_params = {
   "no_of_events": UserSettableParameter(
@@ -84,4 +85,7 @@ chart_element = CustomChartModule(
 map_element = MapModule(portray_map, [52.9, -1.8], 6, 600, 600)
 console = LogElement()
 
-server = ModularServer(PublicOrderPolicing, [map_element, chart_element, console], "Public Order Policing Model", model_params)
+#server = ModularServer(PublicOrderPolicing, [map_element, chart_element, console], "Public Order Policing Model", model_params)
+
+# test model with agents on road network
+server = ModularServer(RouteModel, [map_element, console], "Police car test", model_params)
