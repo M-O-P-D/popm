@@ -9,7 +9,9 @@ from shapely.geometry import LineString
 
 from popm.initialisation import load_data
 from popm.utils import bng2lonlat, deserialise_geometry
-from popm.ford_granada import get_route
+
+# API key should be in .env
+load_dotenv(find_dotenv())
 
 BASE_URL = "https://graphhopper.com/api/1/"
 
