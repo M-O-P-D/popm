@@ -87,7 +87,7 @@ class PublicOrderPolicing(Model):
     allocate(event_agents, force_agents, psu_agents, self.travel_times, self.log)
 
   def time(self):
-    return self.schedule.steps * self.timestep
+    return (self.schedule.steps+1) * self.timestep
 
   def step(self):
     """
