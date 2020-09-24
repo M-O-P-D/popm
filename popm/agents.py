@@ -5,7 +5,7 @@ from shapely.geometry import Point
 from math import atan2, sin, cos, sqrt
 
 from .initialisation import PSU_OFFICERS
-from .utils import serialise_geometry, deserialise_geometry
+from .utils import serialise_geometry, deserialise_geometry, hmm
 
 class ForceAreaAgent(GeoAgent):
 
@@ -109,7 +109,7 @@ class ForcePSUAgent(GeoAgent):
         self.dest = None
         e.resources_present += PSU_OFFICERS
         if e.resources_required <= e.resources_present:
-          self.model.log.append("%s event is fully resourced at t=%f" % (e.name, self.model.time()))
+          self.model.log.append("%s event is fully resourced at t=%s" % (e.name, hmm(self.model.time())))
         self.shape = dest
       else:
         # avoids potential div0, but is there a more efficient approach
@@ -156,10 +156,10 @@ class PublicOrderEventAgent(GeoAgent):
     self.time_to_end -= self.model.timestep
 
     if self.time_to_start <= 0 and self.time_to_start > -self.model.timestep:
-      self.model.log.append("Event started in %s" % self.name)
+      self.model.log.append("Event started in %s at t=%s" % (self.name, hmm(self.model.time())))
 
     if self.time_to_end <= 0 and self.time_to_end > -self.model.timestep:
-      self.model.log.append("Event ended in %s" % self.name)
+      self.model.log.append("Event ended in %s at t=%s" % (self.name, hmm(self.model.time())))
       self.resources_required = 0
       self.resources_allocated = 0
       # deallocate agents

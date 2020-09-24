@@ -22,3 +22,8 @@ def bng2lonlat(shape):
 def lonlat2bng(shape):
   return transform(_proj_lonlat2bng.transform, shape)
 
+def hmm(t):
+  h = int(t)
+  m = int((t - h) * 60)
+  return "%d:%02d" % (h, m) 
+
