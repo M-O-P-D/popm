@@ -23,11 +23,14 @@ class ForceAreaAgent(GeoAgent):
   def render(self):
     if self.dispatched_psus == 0:
       colour = "#BFBFBF"
+      layer = 0
     elif self.available_psus > 0:
       colour = "#9F9F9F"
+      layer = 1
     else:
       colour = "#7F7F7F"
-    return { "color": colour, "Layer": 0 }
+      layer = 2
+    return { "color": colour, "Layer": layer }
 
 class ForcePSUAgent(GeoAgent):
 
@@ -170,8 +173,8 @@ class PublicOrderEventAgent(GeoAgent):
 
   def render(self):
     if self.time_to_end > 0:
-      return { "radius": 4, "color": "Red" if self.resources_allocated < self.resources_required else "Black"}
-    return { "radius": 4, "color": "Gray", "Layer": 0 }
+      return { "radius": 8, "color": "Red" if self.resources_allocated < self.resources_required else "Black"}
+    return { "radius": 8, "color": "Gray", "Layer": 0 }
 
   def __get_psu_agents(self):
     return [a for a in self.model.schedule.agents if isinstance(a, ForcePSUAgent) and a.assigned_to == self.name]

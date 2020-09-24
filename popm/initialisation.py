@@ -116,24 +116,37 @@ def create_psu_data(forces, staff_absence):
     # check we have the right number
     assert len(psu_data[psu_data.name == name]) == n, "%s %d vs %d" % (name, len(psu_data[psu_data.name == name]), n)
 
-  # now covert geometry from the force area polygon a unique offset from the centroid
+  # all now live at force centroid for routing purposes
+
   for name in forces.name:
-
-    dx = 1000
-    dy = 1000
     single_psu_data = psu_data[psu_data.name == name]
-
-    rows = ceil(sqrt(len(single_psu_data)))
-    j = 0
     for idx, r in single_psu_data.iterrows():
-      p = deserialise_geometry(r["centroid"])
-      x = p.x - rows * dx / 2
-      y = p.y - rows * dy / 2
+      # p = deserialise_geometry(r["centroid"])
+      # x = p.x - rows * dx / 2
+      # y = p.y - rows * dy / 2
 
       # # NB // is integer division
-      psu_data.at[idx, "geometry"] = Point([x + j // rows * dx, y + j % rows * dy])
+      psu_data.at[idx, "geometry"] = deserialise_geometry(r["centroid"]) #Point([x + j // rows * dx, y + j % rows * dy])
       #print(psu_data.at[idx, "geometry"])
-      j = j + 1
+
+  # # now covert geometry from the force area polygon a unique offset from the centroid
+  # for name in forces.name:
+
+  #   dx = 1000
+  #   dy = 1000
+  #   single_psu_data = psu_data[psu_data.name == name]
+
+  #   rows = ceil(sqrt(len(single_psu_data)))
+  #   j = 0
+  #   for idx, r in single_psu_data.iterrows():
+  #     p = deserialise_geometry(r["centroid"])
+  #     x = p.x - rows * dx / 2
+  #     y = p.y - rows * dy / 2
+
+  #     # # NB // is integer division
+  #     psu_data.at[idx, "geometry"] = Point([x + j // rows * dx, y + j % rows * dy])
+  #     #print(psu_data.at[idx, "geometry"])
+  #     j = j + 1
 
   psu_data["assigned_to"] = None
   psu_data["assigned"] = False
@@ -146,15 +159,20 @@ def create_psu_data(forces, staff_absence):
 
 def initialise_event_data(model, event_resources, event_start, event_duration, force_data):
   # activate events as per parameters
-  event_data = force_data.loc[model.event_locations, ["name", "Alliance", "geometry"]].copy()
+  event_data = force_data.loc[model.event_locations, ["name", "Alliance", "centroid", "geometry"]].copy()
 
-  for i, r in event_data.iterrows():
-    min_x, min_y, max_x, max_y = r.geometry.bounds
-    while True:
-      p = Point([model.random.uniform(min_x, max_x), model.random.uniform(min_y, max_y)])
-      if p.within(r.geometry):
-        event_data.at[i, "geometry"] = p
-        break
+  # copying both geometry and centroid then overwriting former with latter and deleting latter preserves the crs
+  event_data["geometry"] = event_data.centroid #.apply(deserialise_geometry)
+  event_data.drop("centroid", axis=1, inplace=True)
+
+  # no longer random in force area
+  # for i, r in event_data.iterrows():
+  #   min_x, min_y, max_x, max_y = r.geometry.bounds
+  #   while True:
+  #     p = Point([model.random.uniform(min_x, max_x), model.random.uniform(min_y, max_y)])
+  #     if p.within(r.geometry):
+  #       event_data.at[i, "geometry"] = p
+  #       break
 
   event_data["resources_required"] = event_resources
   event_data["resources_allocated"] = 0

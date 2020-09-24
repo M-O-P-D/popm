@@ -3,7 +3,7 @@
 import geopandas as gpd
 import pandas as pd
 
-df = pd.read_csv("data/force_centroid_routes.zip") 
+df = pd.read_csv("data/force_centroid_routes.zip")
 
 print(df.head())
 # %%
