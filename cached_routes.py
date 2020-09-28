@@ -2,9 +2,8 @@
 
 import geopandas as gpd
 import pandas as pd
-from shapely.geometry import LineString
 
-df = pd.read_csv("data/force_centroid_routes2.zip")
+df = pd.read_csv("data/force_centroid_routes.zip")
 
 
 from shapely import wkt

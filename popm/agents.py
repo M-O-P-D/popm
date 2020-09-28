@@ -86,7 +86,7 @@ class ForcePSUAgent(GeoAgent):
 
     dest = deserialise_geometry(self.dest)
 
-    # TODO performance is awful, cache interpolations 
+    # TODO performance is awful, cache interpolations
     #r = self.model.active_routes[(self.__get_force_agent().unique_id, self.dest_id)]
     # if r is None:
     #   print(self.__get_force_agent().unique_id, self.dest_id)
@@ -95,7 +95,7 @@ class ForcePSUAgent(GeoAgent):
     if self.assigned and not self.dispatched:
       e = self.__get_event_agent()
       if self.name == self.dest:
-        travel_time = 0 
+        travel_time = 0
       else:
         travel_time = self.model.routes.loc[self.name, self.assigned_to]["time"]
       if travel_time > e.time_to_start - self.model.timestep:

@@ -1,4 +1,3 @@
-from math import sqrt
 from .utils import serialise_geometry
 from .initialisation import PSU_OFFICERS
 from .agents import ForcePSUAgent
@@ -95,11 +94,10 @@ def allocate(event_agents, force_agents, psu_agents, routes, log):
           f.available_psus -= 1
           f.dispatched_psus += 1
           allocated += 1
-        if allocated > 0: 
+        if allocated > 0:
           log.append("%d PSUs allocated from alliance %s to %s (rank=%f)" % (allocated, f.name, a.name, r[1]))
-          #linestr_out = routes.loc[f.name, a.name]["geometry"] 
-          #linestr_ret = routes.loc[a.name, f.name]["geometry"] 
-          #active_routes[(f.unique_id, a.unique_id)] = { "out": linestr_out.xy, "ret": linestr_ret.xy }
+          # TODO cache route interps
+          # active_routes[(f.unique_id, a.unique_id)] = { "out": linestr_out.xy, "ret": linestr_ret.xy }
 
     # if still not fully resourced, request other forces
     if req > 0:
@@ -116,10 +114,10 @@ def allocate(event_agents, force_agents, psu_agents, routes, log):
           f.available_psus -= 1
           f.dispatched_psus += 1
           allocated += 1
-        if allocated > 0: 
+        if allocated > 0:
           log.append("%d PSUs allocated from %s to %s (rank=%f)" % (allocated, f.name, a.name, r[1]))
-          #linestr_out = routes.loc[f.name, a.name]["geometry"] 
-          #linestr_ret = routes.loc[a.name, f.name]["geometry"] 
+          #linestr_out = routes.loc[f.name, a.name]["geometry"]
+          #linestr_ret = routes.loc[a.name, f.name]["geometry"]
           #active_routes[(f.unique_id, a.unique_id)] = { "out": linestr_out.xy, "ret": linestr_ret.xy }
 
     # if still not fully resourced, print a message
