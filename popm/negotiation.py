@@ -41,13 +41,6 @@ def mark_psu_assigned(force_area, event_agent, psu_agents, include_reserved=Fals
   avail[0].dest = serialise_geometry(event_agent.shape)
   avail[0].dest_id = event_agent.unique_id
 
-  # agents move as-the-crow-flies on the map, but use road travel times to determine when to move
-  # thus we need to compute an equivalent straight-line speed that results in arrival at destination at same time as if on the road network
-  # unless in same force area in which case we get a div by zero so default to 50km/h
-  # t = travel_times.at[avail[0].name, event_agent.name]
-  # euclidean_dist = sqrt((avail[0].shape.x - event_agent.shape.x)**2 + (avail[0].shape.y - event_agent.shape.y)**2) / 1000.0
-  # avail[0].speed = euclidean_dist / t if t != 0.0 else 50.0
-
 def allocate(event_agents, force_agents, psu_agents, routes, log):
 
   # set up interpolatable routes for active PSUs
@@ -116,12 +109,12 @@ def allocate(event_agents, force_agents, psu_agents, routes, log):
           allocated += 1
         if allocated > 0:
           log.append("%d PSUs allocated from %s to %s (rank=%f)" % (allocated, f.name, a.name, r[1]))
-          #linestr_out = routes.loc[f.name, a.name]["geometry"]
-          #linestr_ret = routes.loc[a.name, f.name]["geometry"]
-          #active_routes[(f.unique_id, a.unique_id)] = { "out": linestr_out.xy, "ret": linestr_ret.xy }
+          # TODO cache route interps
+          # active_routes[(f.unique_id, a.unique_id)] = { "out": linestr_out.xy, "ret": linestr_ret.xy }
 
     # if still not fully resourced, print a message
     if req > 0:
       log.append("** %s event cannot be fully resource allocated **" % a.name)
 
+  # TODO cache route interps
   #return active_routes

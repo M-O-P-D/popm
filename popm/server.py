@@ -1,3 +1,7 @@
+import geopandas as gpd
+import pandas as pd
+from shapely import wkt
+
 from mesa_geo.visualization.ModularVisualization import ModularServer
 #from mesa.visualization.modules import ChartModule
 from mesa.visualization.UserParam import UserSettableParameter
@@ -8,7 +12,11 @@ from .visualization.CustomChartVisualization import CustomChartModule
 
 from .portrayal import portray_map
 from .model import PublicOrderPolicing
-from .routemodel import RouteModel
+
+# load this data once only (its a bottleneck and its constant anyway)
+df = pd.read_csv("./data/force_centroid_routes.zip")
+df["geometry"] = df["geometry"].apply(wkt.loads)
+df["time"] = df["time"] / 3600.0 # convert travel time seconds to hours
 
 model_params = {
   "no_of_events": UserSettableParameter(
@@ -69,7 +77,8 @@ model_params = {
     120,
     5,
     description="The timestep length in minutes"
-  )
+  ),
+  "routes": gpd.GeoDataFrame(df).set_index(["origin", "destination"])
 }
 
 chart_element = CustomChartModule(
@@ -81,6 +90,7 @@ chart_element = CustomChartModule(
   400,
   600
 )
+
 
 map_element = MapModule(portray_map, [52.9, -1.8], 6, 600, 600)
 console = LogElement()

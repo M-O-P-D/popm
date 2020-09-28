@@ -5,7 +5,7 @@ from mesa_geo.geoagent import AgentCreator # GeoAgent
 from mesa_geo import GeoSpace
 
 from .agents import ForceAreaAgent, ForcePSUAgent, PublicOrderEventAgent
-from .initialisation import load_data, create_psu_data, initialise_event_data
+from .initialisation import load_force_data, create_psu_data, initialise_event_data
 from .negotiation import allocate
 from .data_collection import * #get_num_assigned, get_num_deployed, get_num_shortfall, get_num_deficit
 
@@ -15,7 +15,7 @@ class PublicOrderPolicing(Model):
   An agent-based model of resource allocation in response to public order events.
   Source code at https://github.com/M-O-P-D/popm
   """
-  def __init__(self, no_of_events, event_resources, event_start, event_duration, staff_absence, timestep, event_locations): #params...
+  def __init__(self, no_of_events, event_resources, event_start, event_duration, staff_absence, timestep, event_locations, routes): #params...
 
     self.log = ["Initialising model"]
 
@@ -48,7 +48,9 @@ class PublicOrderPolicing(Model):
     self.schedule = SimultaneousActivation(self)
     self.grid = GeoSpace(crs="epsg:27700")
 
-    force_data, self.routes = load_data()
+    self.routes = routes
+
+    force_data = load_force_data()
     # create PSU dataset (which appends to force data too, so must do this *before* creating the force agents)
     psu_data = create_psu_data(force_data, staff_absence)
 
