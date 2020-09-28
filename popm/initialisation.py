@@ -17,7 +17,7 @@ CORE_FUNCTIONS = ["emergency", "firearms", "major_incident", "public_order", "se
 
 CORE_FUNCTIONS_MIN = [80,80,80,0,80,80] # officers retained in each of the above functions
 
-def load_data():
+def load_force_data():
 
   geojson = "./data/force_boundaries_ugc.geojson"
   force_data_file = "./data/PFAs-VECTOR-NAMES-Basic-with-Core-with-Alliance.csv"
@@ -38,9 +38,6 @@ def load_data():
   gdf.drop(["E23000016", "E23000023", "E23000027"], inplace=True)
   gdf.at["E23000014", "name"] = "W Midlands W Mercia"
   gdf.at["E23000026", "name"] = "Beds Cambs Herts"
-
-  # length/area units are defined by the crs
-  # df.crs.axis_info[0].unit_name
 
   data = pd.read_csv(force_data_file) \
     .replace({"Metropolitan": "Metropolitan Police",
@@ -66,23 +63,13 @@ def load_data():
   force_data = gpd.GeoDataFrame(gdf[columns])
 
   # extract centroid data
-  # TODO the geojson contains latlong and BNG coords for centroids so could directly compute distances from east/northings (if simpler)
-
-  # compute centroids and shift index so that agent ids arent duplicated
   centroids = gpd.GeoDataFrame(gdf[["name", "Alliance"]], geometry=gpd.points_from_xy(gdf.LONG, gdf.LAT), crs = {"init": "epsg:4326"}).to_crs(epsg=27700)
 
   # add centroid column, but not as Shapely object as will get a serialisation error
   force_data = force_data.merge(centroids.rename({"geometry": "centroid"}, axis=1)[["name", "centroid"]], on="name")
   force_data.centroid = force_data.centroid.apply(serialise_geometry)
 
-  # TODO move into server.py as its very slow to init this dataset
-  df = pd.read_csv("./data/force_centroid_routes.zip")
-  df["geometry"] = df["geometry"].apply(wkt.loads)
-  df["time"] = df["time"] / 3600.0 # convert travel time seconds to hours
-
-  routes = gpd.GeoDataFrame(df).set_index(["origin", "destination"])
-
-  return force_data, routes
+  return force_data
 
 def create_psu_data(forces, staff_absence):
 
