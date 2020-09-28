@@ -84,7 +84,7 @@ class PublicOrderPolicing(Model):
     self.running = True # doesnt work?
 
     # now assign PSUs to events
-    #self.active_routes = 
+    # TODO cache routes
     allocate(event_agents, force_agents, psu_agents, self.routes, self.log)
 
   def time(self):
