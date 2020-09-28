@@ -7,6 +7,7 @@ from math import ceil, sqrt
 
 from shapely.geometry import Point
 from shapely.ops import cascaded_union
+from shapely import wkt
 
 from .utils import serialise_geometry, deserialise_geometry
 
@@ -74,17 +75,14 @@ def load_data():
   force_data = force_data.merge(centroids.rename({"geometry": "centroid"}, axis=1)[["name", "centroid"]], on="name")
   force_data.centroid = force_data.centroid.apply(serialise_geometry)
 
-  # compute distance matrix
-  # convert to different projection for distance computation
-  # see https://gis.stackexchange.com/questions/293310/how-to-use-geoseries-distance-to-get-the-right-answer
-  # m = np.zeros((len(centroids), len(centroids)))
-  # for i in range(len(centroids)):
-  #   m[i,:] = centroids.distance(centroids.geometry[i]) / 1000.0
-  # distances = pd.DataFrame(m, columns=centroids.name, index=centroids.name)
-  distances = pd.read_csv("./data/centroid_distances.csv").set_index("name")
-  times = pd.read_csv("./data/centroid_times.csv").set_index("name")
+  # TODO move into server.py as its very slow to init this dataset
+  df = pd.read_csv("./data/force_centroid_routes.zip")
+  df["geometry"] = df["geometry"].apply(wkt.loads)
+  df["time"] = df["time"] / 3600.0 # convert travel time seconds to hours
 
-  return force_data, distances, times
+  routes = gpd.GeoDataFrame(df).set_index(["origin", "destination"])
+
+  return force_data, routes
 
 def create_psu_data(forces, staff_absence):
 

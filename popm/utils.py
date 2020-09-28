@@ -25,5 +25,5 @@ def lonlat2bng(shape):
 def hmm(t):
   h = int(t)
   m = int((t - h) * 60)
-  return "%d:%02d" % (h, m) 
+  return "%dh%02dm" % (h, m) 
 

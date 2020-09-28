@@ -2,7 +2,8 @@ from mesa_geo.geoagent import GeoAgent
 
 from shapely.geometry import Point
 
-from math import atan2, sin, cos, sqrt
+import numpy as np
+#from math import atan2, sin, cos, sqrt
 
 from .initialisation import PSU_OFFICERS
 from .utils import serialise_geometry, deserialise_geometry, hmm
@@ -44,16 +45,13 @@ class ForcePSUAgent(GeoAgent):
     self.dispatched = False
     self.deployed = False
     self.dest = None
+    self.dest_id = None
     self.home = serialise_geometry(self.shape)
-    self.speed = 0.0
 
     # TODO Can't use a ref to agents directly as its not JSON serialisable
     # self.event_id = None
     # self.force_id = None
 
-  def step(self):
-
-    self.__move() #self.shape, self.dest, ForcePSUAgent.SPEED)
 
   def render(self):
     colour = "Blue"
@@ -77,32 +75,39 @@ class ForcePSUAgent(GeoAgent):
         return a
     raise ValueError("no force associated with PSU agent from %s" % self.name)
 
-  def __move(self):
+  def step(self):
 
     if self.model.time() < ForcePSUAgent.MOBILISATION_TIME:
       return
-
-    # max distance in a single timestep (in metres)
-    delta = self.speed * 1000 * self.model.timestep
 
     # case 0: not assigned and at base
     if (not self.assigned and not self.dispatched) or self.dest is None:
       return
 
     dest = deserialise_geometry(self.dest)
-    euclidean_dist = sqrt((self.shape.x - dest.x)**2 + (self.shape.y - dest.y)**2)
+
+    # TODO performance is awful, cache interpolations 
+    #r = self.model.active_routes[(self.__get_force_agent().unique_id, self.dest_id)]
+    # if r is None:
+    #   print(self.__get_force_agent().unique_id, self.dest_id)
 
     # case 1: assigned but not yet dispatched...potentially falls though to case 2
     if self.assigned and not self.dispatched:
       e = self.__get_event_agent()
-      travel_time = euclidean_dist / self.speed / 1000.0
+      if self.name == self.dest:
+        travel_time = 0 
+      else:
+        travel_time = self.model.routes.loc[self.name, self.assigned_to]["time"]
       if travel_time > e.time_to_start - self.model.timestep:
         self.dispatched = True
 
     # case 2: assigned and dispatched, i.e. en route to event
     if self.assigned and self.dispatched and not self.deployed:
+
+      time = self.model.routes.loc[self.name, self.assigned_to]["time"]
+
       # if we arrive at event, update agents
-      if euclidean_dist < delta:
+      if self.model.time() >= ForcePSUAgent.MOBILISATION_TIME + time: # TODO offset w.r.t event start
         e = self.__get_event_agent()
         # if arriving at event, find the associated event and update it
         self.deployed = True
@@ -112,11 +117,14 @@ class ForcePSUAgent(GeoAgent):
           self.model.log.append("%s event is fully resourced at t=%s" % (e.name, hmm(self.model.time())))
         self.shape = dest
       else:
-        # avoids potential div0, but is there a more efficient approach
-        angle = atan2(dest.y - self.shape.y, dest.x - self.shape.x)
-        x = self.shape.x + delta * cos(angle)
-        y = self.shape.y + delta * sin(angle)
-        self.shape = Point([x, y])
+        route = self.model.routes.loc[self.name, self.assigned_to]["geometry"]
+        # move if event is not in home force area
+        if time > 0.0:
+          xy = route.xy
+          timeline = np.linspace(ForcePSUAgent.MOBILISATION_TIME, ForcePSUAgent.MOBILISATION_TIME + time, len(xy[0])) # TODO offset w.r.t event start
+          t = self.model.time()
+          self.shape = Point(np.interp(t, timeline, xy[0]), np.interp(t, timeline, xy[1]))
+
 
     # case 3: assigned, dispatched and deployed at event...potentially falls though to case 4
     # handled by PublicOrderEventAgent.step()
@@ -129,17 +137,23 @@ class ForcePSUAgent(GeoAgent):
     # case 4: returning to base after event
     # otherwise, arriving home, find the associated force and make available again
     if not self.assigned and self.dispatched:
-      if euclidean_dist < delta:
+
+      time = self.model.routes.loc[self.assigned_to, self.name]["time"]
+      route = self.model.routes.loc[self.assigned_to, self.name]["geometry"]
+      e = self.__get_event_agent()
+
+      if self.dispatched and time + e.time_to_end < 0:
         f = self.__get_force_agent()
         f.dispatched_psus -= 1
         f.available_psus += 1
         self.dispatched = False
         self.shape = dest
       else:
-        angle = atan2(dest.y - self.shape.y, dest.x - self.shape.x)
-        x = self.shape.x + delta * cos(angle)
-        y = self.shape.y + delta * sin(angle)
-        self.shape = Point([x, y])
+        if time > 0.0:
+          xy = route.xy
+          timeline = np.linspace(e.time_to_end, e.time_to_end + time, len(xy[0])) # TODO offset w.r.t event start
+          t = 0 # relative to time_to_end
+          self.shape = Point(np.interp(t, timeline, xy[0]), np.interp(t, timeline, xy[1]))
 
 
 class PublicOrderEventAgent(GeoAgent):
@@ -168,7 +182,7 @@ class PublicOrderEventAgent(GeoAgent):
         self.resources_present -= PSU_OFFICERS
         a.assigned = False
         a.dest = a.home
-        a.assigned_to = None
+        #a.assigned_to = None
         a.deployed = False
 
   def render(self):

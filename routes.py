@@ -25,8 +25,8 @@ def url(endpoint, query=[]):
 def get_route(start_ll, end_ll):
 
   query = [
-    ("point", ("%f,%f" % (start_ll.y, start_ll.x))), # "53.9261829,-1.8270279"),
-    ("point", ("%f,%f" % (end_ll.y, end_ll.x))), # "53.9233771,-1.8003073"),
+    ("point", "%f,%f" % (start_ll.y, start_ll.x)), # "53.9261829,-1.8270279"),
+    ("point", "%f,%f" % (end_ll.y, end_ll.x)), # "53.9233771,-1.8003073"),
     ("vehicle", "car"),
     ("calc_points", "true"),
     ("points_encoded", "false"), # means points are just lon/lat, which is what we want

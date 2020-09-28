@@ -19,7 +19,7 @@ class PublicOrderPolicing(Model):
 
     self.log = ["Initialising model"]
 
-    # CustomChartVisualisation needs this to scaled deployed as a % of required
+    # CustomChartVisualisation needs this to scaled deployed as a % of required (the member var is not used anywhere else)
     self.event_resources = event_resources / 100
 
     # hourly (input is minutes)
@@ -48,7 +48,7 @@ class PublicOrderPolicing(Model):
     self.schedule = SimultaneousActivation(self)
     self.grid = GeoSpace(crs="epsg:27700")
 
-    force_data, self.distances, self.travel_times = load_data()
+    force_data, self.routes = load_data()
     # create PSU dataset (which appends to force data too, so must do this *before* creating the force agents)
     psu_data = create_psu_data(force_data, staff_absence)
 
@@ -84,7 +84,8 @@ class PublicOrderPolicing(Model):
     self.running = True # doesnt work?
 
     # now assign PSUs to events
-    allocate(event_agents, force_agents, psu_agents, self.travel_times, self.log)
+    #self.active_routes = 
+    allocate(event_agents, force_agents, psu_agents, self.routes, self.log)
 
   def time(self):
     return (self.schedule.steps+1) * self.timestep
