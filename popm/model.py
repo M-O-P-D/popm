@@ -73,6 +73,10 @@ class PublicOrderPolicing(Model):
     if event_locations == "Breaking Point":
       self.event_locations = [0, 4, 13]
     # otherwise random (with or without fixed seed, see above)
+    elif isinstance(event_locations, list):
+      if len(event_locations) != no_of_events:
+        raise ValueError("event number (%d) and locations (%s) mismatch" % (no_of_events, event_locations))
+      self.event_locations = event_locations
     else:
       self.event_locations = self.random.sample(list(force_data.index.values), min(no_of_events, len(force_data)))
     event_data = initialise_event_data(self, event_resources, event_start, event_duration, force_data)
