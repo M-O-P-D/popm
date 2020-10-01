@@ -3,6 +3,7 @@
 # TODO look into Mesa's BatchRunner class...
 
 import json
+import time
 import pandas as pd
 import geopandas as gpd
 from shapely import wkt
@@ -22,7 +23,7 @@ df = pd.read_csv("./data/force_centroid_routes.zip")
 df["geometry"] = df["geometry"].apply(wkt.loads)
 df["time"] = df["time"] / 3600.0 # convert travel time seconds to hours
 routes = gpd.GeoDataFrame(df).set_index(["origin", "destination"])
-
+n_locations = len(routes.index.levels[0])
 
 def main(config, runs):
 
@@ -37,7 +38,7 @@ def main(config, runs):
       config["event_locations"],
       routes)
 
-    model.run_model()
+    #model.run_model()
 
     # model_data = model.datacollector.get_model_vars_dataframe()
     # print(model_data)
@@ -48,24 +49,21 @@ def main(config, runs):
 
     ids = agent_data.index.get_level_values("AgentID").unique().values
 
-    cols = ["Deployed"] #, "Allocated", "Present"]
+    # TODO get KPI metrics
 
-    fig, axs = plt.subplots(len(ids), sharex=True, figsize=(6,8))
+    #cols = ["Deployed"] #, "Allocated", "Present"]
+    # fig, axs = plt.subplots(len(ids), sharex=True, figsize=(6,8))
+    # for i, unique_id in enumerate(ids):
+    #   df = agent_data.xs(unique_id, level="AgentID")
+    #   axs[i].plot(df.index.values, df[cols])
+    #   axs[i].set_title(get_name(model, unique_id))
+    #   #axs[i].set_xlabel("Time (h)")
+    #   axs[i].set_ylabel("Officers")
+    # fig.legend(cols)
+    # axs[-1].set_xlabel("Time (h)")
 
-    for i, unique_id in enumerate(ids):
-      df = agent_data.xs(unique_id, level="AgentID")
-
-      print(df)
-
-      axs[i].plot(df.index.values, df[cols])
-      axs[i].set_title(get_name(model, unique_id))
-      #axs[i].set_xlabel("Time (h)")
-      axs[i].set_ylabel("Officers")
-    fig.legend(cols)
-    axs[-1].set_xlabel("Time (h)")
-
-    # agent_data.plot()
-    plt.show()
+    # # agent_data.plot()
+    # plt.show()
 
 if __name__ == "__main__":
 
@@ -74,8 +72,17 @@ if __name__ == "__main__":
   parser.add_argument("runs", nargs="?", type=int, default=1, help="the number of runs to execute, default 1")
   args = parser.parse_args()
 
+  start_time = time.time()
+
   # load config
   with open(args.config) as f:
-    config = json.load(f)
+    master_config = json.load(f)
+    # permute config
+    if "event_locations" not in master_config:
+      config = master_config
+      for i in range(n_locations):
+        config["event_locations"] = [i]
+        print(config["event_locations"])
+        main(config, args.runs)
+  print("Runtime: %ss" % (time.time() - start_time))
 
-    main(config, args.runs)
