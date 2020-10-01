@@ -3,6 +3,9 @@
 # TODO look into Mesa's BatchRunner class...
 
 import json
+import pandas as pd
+import geopandas as gpd
+from shapely import wkt
 import argparse
 from popm.model import PublicOrderPolicing
 
@@ -14,6 +17,13 @@ def get_name(model, unique_id):
       return a.name
   return str(unique_id)
 
+# load this data once only (its a bottleneck and its constant anyway)
+df = pd.read_csv("./data/force_centroid_routes.zip")
+df["geometry"] = df["geometry"].apply(wkt.loads)
+df["time"] = df["time"] / 3600.0 # convert travel time seconds to hours
+routes = gpd.GeoDataFrame(df).set_index(["origin", "destination"])
+
+
 def main(config, runs):
 
   for _ in range(runs):
@@ -24,7 +34,8 @@ def main(config, runs):
       config["event_duration"],
       config["staff_absence"],
       config["timestep"],
-      config["event_locations"])
+      config["event_locations"],
+      routes)
 
     model.run_model()
 
@@ -33,20 +44,20 @@ def main(config, runs):
     agent_data = model.datacollector.get_agent_vars_dataframe().dropna()
 
     # change required to zero before event
-    agent_data.loc[agent_data["Active"] == False, "Required"] = 0.0
+    # agent_data.loc[agent_data["Active"] == False, "Required"] = 0.0
 
     ids = agent_data.index.get_level_values("AgentID").unique().values
 
-    #agent_data.xs(129, level="AgentID").plot()
-
-    cols = ["Required", "Allocated", "Present"]
+    cols = ["Deployed"] #, "Allocated", "Present"]
 
     fig, axs = plt.subplots(len(ids), sharex=True, figsize=(6,8))
 
     for i, unique_id in enumerate(ids):
       df = agent_data.xs(unique_id, level="AgentID")
 
-      axs[i].plot(df.Time, df[cols])
+      print(df)
+
+      axs[i].plot(df.index.values, df[cols])
       axs[i].set_title(get_name(model, unique_id))
       #axs[i].set_xlabel("Time (h)")
       axs[i].set_ylabel("Officers")
