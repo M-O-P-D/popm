@@ -8,10 +8,8 @@ import pandas as pd
 import geopandas as gpd
 from shapely import wkt
 import argparse
-from itertools import combinations   
+from itertools import combinations
 from popm.model import PublicOrderPolicing
-
-from matplotlib import pyplot as plt
 
 def get_name(model, unique_id):
   for a in model.schedule.agents:
@@ -26,7 +24,7 @@ df["time"] = df["time"] / 3600.0 # convert travel time seconds to hours
 routes = gpd.GeoDataFrame(df).set_index(["origin", "destination"])
 n_locations = len(routes.index.levels[0])
 
-def main(config, runs):
+def run(config, runs):
 
   for _ in range(runs):
     model = PublicOrderPolicing(
@@ -70,7 +68,7 @@ if __name__ == "__main__":
 
   parser = argparse.ArgumentParser(description="popm batch run")
   parser.add_argument("config", type=str, help="the model configuration file (json)")
-  parser.add_argument("runs", nargs="?", type=int, default=1, help="the number of runs to execute, default 1")
+  #parser.add_argument("runs", nargs="?", type=int, default=1, help="the number of runs to execute, default 1")
   args = parser.parse_args()
 
   start_time = time.time()
@@ -99,10 +97,10 @@ if __name__ == "__main__":
           for l in locations:
             config["event_locations"] = l
             #print(config)
-            main(config, args.runs)
+            run(config, 1)
         else:
           #print(config)
-          main(config, args.runs)
+          run(config, 1)
 
   print("Runtime: %ss" % (time.time() - start_time))
 
