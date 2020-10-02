@@ -8,6 +8,7 @@ import pandas as pd
 import geopandas as gpd
 from shapely import wkt
 import argparse
+from itertools import combinations   
 from popm.model import PublicOrderPolicing
 
 from matplotlib import pyplot as plt
@@ -38,7 +39,7 @@ def main(config, runs):
       config["event_locations"],
       routes)
 
-    #model.run_model()
+    model.run_model()
 
     # model_data = model.datacollector.get_model_vars_dataframe()
     # print(model_data)
@@ -77,12 +78,31 @@ if __name__ == "__main__":
   # load config
   with open(args.config) as f:
     master_config = json.load(f)
-    # permute config
+
+    n_runs =  len(master_config["event_resources"]) * len(master_config["event_start"])
+
+    # Get all combinations for given number of events
     if "event_locations" not in master_config:
-      config = master_config
-      for i in range(n_locations):
-        config["event_locations"] = [i]
-        print(config["event_locations"])
-        main(config, args.runs)
+      locations = list(combinations(range(n_locations), master_config["no_of_events"]))
+      n_runs *= len(locations)
+
+    print("Total runs = %d" % n_runs)
+
+    config = master_config.copy()
+    # iterate event resource requirement
+    for s in master_config["event_resources"]:
+      config["event_resources"] = s
+      # iterate event start
+      for t in master_config["event_start"]:
+        config["event_start"] = t
+        if "event_locations" not in master_config:
+          for l in locations:
+            config["event_locations"] = l
+            #print(config)
+            main(config, args.runs)
+        else:
+          #print(config)
+          main(config, args.runs)
+
   print("Runtime: %ss" % (time.time() - start_time))
 
