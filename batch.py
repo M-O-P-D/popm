@@ -49,15 +49,15 @@ def run(config, index, results):
   # indices for KPI metrics
   index_1h = (config["event_start"] + 1) / model.timestep
   index_4h = (config["event_start"] + 4) / model.timestep
-  results.loc[index] = { 
+  results.loc[index] = {
     "location": " & ".join([get_name(model, id) for id in model.event_locations]),
-    "start": config["event_start"], 
-    "resources-per-event": config["event_resources"], 
-    "KPI-1h-deployed-pct": model_data.loc[index_1h, "Deployed"], 
+    "start": config["event_start"],
+    "resources-per-event": config["event_resources"],
+    "KPI-1h-deployed-pct": model_data.loc[index_1h, "Deployed"],
     "KPI-4h-deployed-pct": model_data.loc[index_4h, "Deployed"]
   }
-  
-  
+
+
 if __name__ == "__main__":
 
   parser = argparse.ArgumentParser(description="popm batch run")
