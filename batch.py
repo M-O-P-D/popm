@@ -50,7 +50,7 @@ def run(config, index, results):
   index_1h = (config["event_start"] + 1) / model.timestep
   index_4h = (config["event_start"] + 4) / model.timestep
   results.loc[index] = { 
-    "location": [get_name(model, id) for id in model.event_locations], 
+    "location": " & ".join([get_name(model, id) for id in model.event_locations]),
     "start": config["event_start"], 
     "resources-per-event": config["event_resources"], 
     "KPI-1h-deployed-pct": model_data.loc[index_1h, "Deployed"], 
@@ -62,7 +62,7 @@ if __name__ == "__main__":
 
   parser = argparse.ArgumentParser(description="popm batch run")
   parser.add_argument("config", type=str, help="the model configuration file (json)")
-  #parser.add_argument("runs", nargs="?", type=int, default=1, help="the number of runs to execute, default 1")
+  parser.add_argument("outfile", type=str, help="the output csv file")
   args = parser.parse_args()
 
   start_time = time.time()
@@ -101,6 +101,6 @@ if __name__ == "__main__":
           run(config, index, results)
           index += 1
 
-  print(results)
+  results.to_csv(args.outfile, index=False)
   print("Runtime: %ss" % (time.time() - start_time))
 
