@@ -20,6 +20,7 @@ class PublicOrderPolicing(Model):
     self.log = ["Initialising model"]
 
     # CustomChartVisualisation needs this to scaled deployed as a % of required (the member var is not used anywhere else)
+    # TODO this is bad and is it even correct?
     self.event_resources = event_resources / 100
 
     # hourly (input is minutes)
