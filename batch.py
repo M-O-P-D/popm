@@ -5,10 +5,15 @@
 import json
 import time
 import pandas as pd
-import geopandas as gpd
-from shapely import wkt
 import argparse
 from itertools import combinations
+import warnings
+
+warnings.filterwarnings(action='ignore', category=FutureWarning, module=r'.*pyproj' )
+
+import geopandas as gpd
+from shapely import wkt
+
 from popm.model import PublicOrderPolicing
 
 def get_name(model, unique_id):
@@ -24,46 +29,35 @@ df["time"] = df["time"] / 3600.0 # convert travel time seconds to hours
 routes = gpd.GeoDataFrame(df).set_index(["origin", "destination"])
 n_locations = len(routes.index.levels[0])
 
-def run(config, runs):
+def run(config, index, results):
 
-  for _ in range(runs):
-    model = PublicOrderPolicing(
-      config["no_of_events"],
-      config["event_resources"],
-      config["event_start"],
-      config["event_duration"],
-      config["staff_absence"],
-      config["timestep"],
-      config["event_locations"],
-      routes)
+  model = PublicOrderPolicing(
+    config["no_of_events"],
+    config["event_resources"],
+    config["event_start"],
+    config["event_duration"],
+    config["staff_absence"],
+    config["timestep"],
+    config["event_locations"],
+    routes)
 
-    model.run_model()
+  model.run_model()
 
-    # model_data = model.datacollector.get_model_vars_dataframe()
-    # print(model_data)
-    agent_data = model.datacollector.get_agent_vars_dataframe().dropna()
+  model_data = model.datacollector.get_model_vars_dataframe() * 100.0 / config["event_resources"] / config["no_of_events"]
+  #print(model_data.loc[[index_1h, index_4h]])
 
-    # change required to zero before event
-    # agent_data.loc[agent_data["Active"] == False, "Required"] = 0.0
-
-    ids = agent_data.index.get_level_values("AgentID").unique().values
-
-    # TODO get KPI metrics
-
-    #cols = ["Deployed"] #, "Allocated", "Present"]
-    # fig, axs = plt.subplots(len(ids), sharex=True, figsize=(6,8))
-    # for i, unique_id in enumerate(ids):
-    #   df = agent_data.xs(unique_id, level="AgentID")
-    #   axs[i].plot(df.index.values, df[cols])
-    #   axs[i].set_title(get_name(model, unique_id))
-    #   #axs[i].set_xlabel("Time (h)")
-    #   axs[i].set_ylabel("Officers")
-    # fig.legend(cols)
-    # axs[-1].set_xlabel("Time (h)")
-
-    # # agent_data.plot()
-    # plt.show()
-
+  # indices for KPI metrics
+  index_1h = (config["event_start"] + 1) / model.timestep
+  index_4h = (config["event_start"] + 4) / model.timestep
+  results.loc[index] = { 
+    "location": [get_name(model, id) for id in model.event_locations], 
+    "start": config["event_start"], 
+    "resources-per-event": config["event_resources"], 
+    "KPI-1h-deployed-pct": model_data.loc[index_1h, "Deployed"], 
+    "KPI-4h-deployed-pct": model_data.loc[index_4h, "Deployed"]
+  }
+  
+  
 if __name__ == "__main__":
 
   parser = argparse.ArgumentParser(description="popm batch run")
@@ -86,6 +80,9 @@ if __name__ == "__main__":
 
     print("Total runs = %d" % n_runs)
 
+    results = pd.DataFrame(index = range(n_runs), columns={"location", "start", "resources-per-event", "KPI-1h-deployed-pct", "KPI-4h-deployed-pct"})
+    index = 0
+
     config = master_config.copy()
     # iterate event resource requirement
     for s in master_config["event_resources"]:
@@ -97,10 +94,13 @@ if __name__ == "__main__":
           for l in locations:
             config["event_locations"] = l
             #print(config)
-            run(config, 1)
+            run(config, index, results)
+            index += 1
         else:
           #print(config)
-          run(config, 1)
+          run(config, index, results)
+          index += 1
 
+  print(results)
   print("Runtime: %ss" % (time.time() - start_time))
 
