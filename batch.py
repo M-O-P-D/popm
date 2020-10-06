@@ -8,6 +8,7 @@ import pandas as pd
 import argparse
 from itertools import combinations
 import warnings
+import humanleague
 
 warnings.filterwarnings(action='ignore', category=FutureWarning, module=r'.*pyproj' )
 
@@ -29,7 +30,7 @@ df["time"] = df["time"] / 3600.0 # convert travel time seconds to hours
 routes = gpd.GeoDataFrame(df).set_index(["origin", "destination"])
 n_locations = len(routes.index.levels[0])
 
-def run(config, index, results):
+def run(config, run_no, results):
 
   model = PublicOrderPolicing(
     config["no_of_events"],
@@ -43,19 +44,34 @@ def run(config, index, results):
 
   model.run_model()
 
-  model_data = model.datacollector.get_model_vars_dataframe() * 100.0 / config["event_resources"] / config["no_of_events"]
+  #model_data = model.datacollector.get_model_vars_dataframe() * 100.0 / config["event_resources"] / config["no_of_events"]
   #print(model_data.loc[[index_1h, index_4h]])
-
   # indices for KPI metrics
   index_1h = (config["event_start"] + 1) / model.timestep
   index_4h = (config["event_start"] + 4) / model.timestep
-  results.loc[index] = {
-    "location": " & ".join([get_name(model, id) for id in model.event_locations]),
-    "start": config["event_start"],
-    "resources-per-event": config["event_resources"],
-    "KPI-1h-deployed-pct": model_data.loc[index_1h, "Deployed"],
-    "KPI-4h-deployed-pct": model_data.loc[index_4h, "Deployed"]
-  }
+  index_8h = (config["event_start"] + 8) / model.timestep
+
+  agent_data = model.datacollector.get_agent_vars_dataframe().dropna()
+  agent_data = agent_data.loc[agent_data.index.isin([index_1h, index_4h, index_8h], level="Step")]
+  agent_data.Deployed *= 100.0 / config["event_resources"]
+  agent_data["Time"] = agent_data.index.get_level_values(0) * config["timestep"] / 60
+  agent_data["Event"] = [get_name(model, uid) for uid in agent_data.index.get_level_values(1)]
+  agent_data["RunId"] = run_no
+  agent_data["Events"] = config["no_of_events"]
+  agent_data["EventSize"] = config["event_resources"]
+  agent_data["EventStart"] = config["event_start"]
+  agent_data["EventDuration"] = config["event_duration"]
+
+  return agent_data
+
+  # results.loc[index] = {
+  #   "location": " & ".join([get_name(model, id) for id in model.event_locations]),
+  #   "start": config["event_start"],
+  #   "resources-per-event": config["event_resources"],
+  #   "KPI-1h-deployed-pct": model_data.loc[index_1h, "Deployed"],
+  #   "KPI-4h-deployed-pct": model_data.loc[index_4h, "Deployed"],
+  #   "KPI-8h-deployed-pct": model_data.loc[index_8h, "Deployed"]
+  # }
 
 
 if __name__ == "__main__":
@@ -80,8 +96,9 @@ if __name__ == "__main__":
 
     print("Total runs = %d" % n_runs)
 
-    results = pd.DataFrame(index = range(n_runs), columns={"location", "start", "resources-per-event", "KPI-1h-deployed-pct", "KPI-4h-deployed-pct"})
-    index = 0
+    results = pd.DataFrame(columns={"Deployed", "Time", "Event", "RunId", "Events", "EventSize", "EventStart", "EventDuration"})
+
+    run_no = 0
 
     config = master_config.copy()
     # iterate event resource requirement
@@ -94,12 +111,12 @@ if __name__ == "__main__":
           for l in locations:
             config["event_locations"] = l
             #print(config)
-            run(config, index, results)
-            index += 1
+            results = results.append(run(config, run_no, results), ignore_index=True)
+            run_no += 1
         else:
           #print(config)
-          run(config, index, results)
-          index += 1
+          results = results.append(run(config, run_no, results), ignore_index=True)
+          run_no += 1
 
   results.to_csv(args.outfile, index=False)
   print("Runtime: %ss" % (time.time() - start_time))

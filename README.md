@@ -10,7 +10,7 @@
 
 `popm` is under development.
 
-As well as the source code here, it's available as a docker container and it's also deployed as an app service [here](https://popm.azurewebsites.net)
+As well as the source code here, it's available as a docker container ~~and it's also deployed as an app service [here](https://popm.azurewebsites.net)~~
 
 ## Developer Setup
 
