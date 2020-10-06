@@ -1,3 +1,4 @@
+#!/bin/bash
 
 #$ -m be
 #$ -M a.p.smith@leeds.ac.uk
@@ -7,5 +8,5 @@
 #$ -o log
 #$ -e log
 
-python batch.py scenario/$1.json scenario/$1.csv
+python batch.py "scenario/$1.json" "scenario/$1.csv"
 
