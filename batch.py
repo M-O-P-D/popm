@@ -8,7 +8,7 @@ import pandas as pd
 import argparse
 from itertools import combinations
 import warnings
-import humanleague
+#import humanleague
 
 warnings.filterwarnings(action='ignore', category=FutureWarning, module=r'.*pyproj' )
 
@@ -53,25 +53,17 @@ def run(config, run_no, results):
 
   agent_data = model.datacollector.get_agent_vars_dataframe().dropna()
   agent_data = agent_data.loc[agent_data.index.isin([index_1h, index_4h, index_8h], level="Step")]
+  agent_data.Allocated *= 100.0 / config["event_resources"]
   agent_data.Deployed *= 100.0 / config["event_resources"]
+  agent_data.rename({"Allocated": "Allocated(%)", "Deployed": "Deployed(%)"}, axis=1, inplace=True)
   agent_data["Time"] = agent_data.index.get_level_values(0) * config["timestep"] / 60
   agent_data["Event"] = [get_name(model, uid) for uid in agent_data.index.get_level_values(1)]
   agent_data["RunId"] = run_no
   agent_data["Events"] = config["no_of_events"]
-  agent_data["EventSize"] = config["event_resources"]
   agent_data["EventStart"] = config["event_start"]
   agent_data["EventDuration"] = config["event_duration"]
 
   return agent_data
-
-  # results.loc[index] = {
-  #   "location": " & ".join([get_name(model, id) for id in model.event_locations]),
-  #   "start": config["event_start"],
-  #   "resources-per-event": config["event_resources"],
-  #   "KPI-1h-deployed-pct": model_data.loc[index_1h, "Deployed"],
-  #   "KPI-4h-deployed-pct": model_data.loc[index_4h, "Deployed"],
-  #   "KPI-8h-deployed-pct": model_data.loc[index_8h, "Deployed"]
-  # }
 
 
 if __name__ == "__main__":
@@ -96,7 +88,7 @@ if __name__ == "__main__":
 
     print("Total runs = %d" % n_runs)
 
-    results = pd.DataFrame(columns={"Deployed", "Time", "Event", "RunId", "Events", "EventSize", "EventStart", "EventDuration"})
+    results = pd.DataFrame(columns={"Deployed(%)", "Allocated(%)", "Time", "Event", "RunId", "Events", "EventStart", "EventDuration"})
 
     run_no = 0
 
