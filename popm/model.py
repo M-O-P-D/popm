@@ -36,8 +36,8 @@ class PublicOrderPolicing(Model):
       agent_reporters={
         # "Time": lambda _: self.time(),
         # "Active": lambda a: (a.time_to_start <= 0.0 and a.time_to_end >= 0.0) if isinstance(a, PublicOrderEventAgent) else None,
-        # "Required": lambda a: a.resources_required if isinstance(a, PublicOrderEventAgent) else None,
-        # "Allocated": lambda a: a.resources_allocated if isinstance(a, PublicOrderEventAgent) else None,
+        "Required": lambda a: a.resources_required if isinstance(a, PublicOrderEventAgent) else None,
+        "Allocated": lambda a: a.resources_allocated if isinstance(a, PublicOrderEventAgent) else None,
         "Deployed": lambda a: a.resources_present if isinstance(a, PublicOrderEventAgent) else None
       }
     )
