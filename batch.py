@@ -6,9 +6,7 @@ import json
 import time
 import pandas as pd
 import argparse
-from itertools import combinations
 import warnings
-#import humanleague
 
 warnings.filterwarnings(action='ignore', category=FutureWarning, module=r'.*pyproj' )
 
@@ -16,6 +14,7 @@ import geopandas as gpd
 from shapely import wkt
 
 from popm.model import PublicOrderPolicing
+from popm.utils import sample_locations
 
 def get_name(model, unique_id):
   for a in model.schedule.agents:
@@ -81,9 +80,10 @@ if __name__ == "__main__":
 
     n_runs =  len(master_config["event_resources"]) * len(master_config["event_start"])
 
-    # Get all combinations for given number of events
-    if "event_locations" not in master_config:
-      locations = list(combinations(range(n_locations), master_config["no_of_events"]))
+    # if event_locations is an array, its assumed that this is a pre-specifed location
+    # Get all combinations for given number of events, subject to a maximum if specified
+    if "event_locations" not in master_config or isinstance(master_config["event_locations"], int):
+      locations = sample_locations(n_locations, master_config["no_of_events"], master_config.get("event_locations", None))
       n_runs *= len(locations)
 
     print("Total runs = %d" % n_runs)

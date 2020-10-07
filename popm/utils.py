@@ -1,5 +1,6 @@
 
-
+from itertools import combinations
+import numpy as np
 import pyproj
 from shapely.geometry import shape
 from shapely.ops import transform
@@ -27,3 +28,11 @@ def hmm(t):
   m = int((t - h) * 60)
   return "%dh%02dm" % (h, m)
 
+
+def sample_locations(n_locations, n_events, max_samples):
+
+  npgen = np.random.Generator(np.random.MT19937(19937))
+  locations = list(combinations(range(n_locations), n_events))
+  if max_samples is not None:
+    return npgen.choice(locations, max_samples, replace=False)
+  return locations
