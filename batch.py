@@ -81,10 +81,13 @@ if __name__ == "__main__":
     n_runs =  len(master_config["event_resources"]) * len(master_config["event_start"])
 
     # if event_locations is an array, its assumed that this is a pre-specifed location
+    # NB model also supports a string: Fixed/Random/Breaking Point
     # Get all combinations for given number of events, subject to a maximum if specified
     if "event_locations" not in master_config or isinstance(master_config["event_locations"], int):
       locations = sample_locations(n_locations, master_config["no_of_events"], master_config.get("event_locations", None))
-      n_runs *= len(locations)
+    else:
+      locations = master_config["event_locations"]
+    n_runs *= len(locations)
 
     print("Total runs = %d" % n_runs)
 
@@ -99,13 +102,8 @@ if __name__ == "__main__":
       # iterate event start
       for t in master_config["event_start"]:
         config["event_start"] = t
-        if "event_locations" not in master_config:
-          for l in locations:
-            config["event_locations"] = l
-            #print(config)
-            results = results.append(run(config, run_no, results), ignore_index=True)
-            run_no += 1
-        else:
+        for l in locations:
+          config["event_locations"] = l
           #print(config)
           results = results.append(run(config, run_no, results), ignore_index=True)
           run_no += 1

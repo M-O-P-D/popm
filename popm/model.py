@@ -42,7 +42,7 @@ class PublicOrderPolicing(Model):
       }
     )
 
-    if event_locations == "Fixed":
+    if isinstance(event_locations, str) and event_locations == "Fixed":
       self.reset_randomizer(19937)
 
     # Set up the grid and schedule.
@@ -71,7 +71,7 @@ class PublicOrderPolicing(Model):
 
     # then the public order event data and agents
     # for fixed events
-    if event_locations == "Breaking Point":
+    if isinstance(event_locations, str) and event_locations == "Breaking Point":
       self.event_locations = [0, 4, 13]
     # otherwise random (with or without fixed seed, see above)
     elif isinstance(event_locations, list):
