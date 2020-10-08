@@ -7,14 +7,18 @@ import time
 import pandas as pd
 import argparse
 import warnings
+from collections import Counter
 
+# suppress deprecation warning we can't do anything about
 warnings.filterwarnings(action='ignore', category=FutureWarning, module=r'.*pyproj' )
 
 import geopandas as gpd
 from shapely import wkt
 
 from popm.model import PublicOrderPolicing
+from popm.agents import ForcePSUAgent
 from popm.utils import sample_locations
+from popm.initialisation import load_force_data, PSU_OFFICERS
 
 def get_name(model, unique_id):
   for a in model.schedule.agents:
@@ -28,6 +32,8 @@ df["geometry"] = df["geometry"].apply(wkt.loads)
 df["time"] = df["time"] / 3600.0 # convert travel time seconds to hours
 routes = gpd.GeoDataFrame(df).set_index(["origin", "destination"])
 n_locations = len(routes.index.levels[0])
+force_data = load_force_data()
+
 
 def run(config, run_no, results):
 
@@ -39,7 +45,22 @@ def run(config, run_no, results):
     config["staff_absence"],
     config["timestep"],
     config["event_locations"],
-    routes)
+    routes,
+    force_data)
+
+  allocation_data = [(a.assigned_to, a.name) for a in model.schedule.agents if isinstance(a, ForcePSUAgent) and a.assigned]
+  allocations = pd.DataFrame.from_dict(Counter(allocation_data), orient="index", columns=["PSUs"]).reset_index()
+  # split the to, from column
+  allocations["EventForce"] = allocations["index"].apply(lambda e: e[0])
+  allocations["HomeForce"] = allocations["index"].apply(lambda e: e[1])
+  allocations["EventAlliance"] = allocations["EventForce"].apply(lambda e: force_data[force_data.name == e]["Alliance"].values[0])
+  allocations["HomeAlliance"] = allocations["HomeForce"].apply(lambda e: force_data[force_data.name == e]["Alliance"].values[0])
+  allocations["Alliance"] = allocations["EventAlliance"] == allocations["HomeAlliance"]
+  allocations["RunId"] = run_no
+  allocations["Requirement"] = config["event_resources"] / PSU_OFFICERS
+  allocations.drop(["index", "EventAlliance", "HomeAlliance"], axis=1, inplace=True)
+
+  print(allocations)
 
   model.run_model()
 
@@ -62,7 +83,7 @@ def run(config, run_no, results):
   agent_data["EventStart"] = config["event_start"]
   agent_data["EventDuration"] = config["event_duration"]
 
-  return agent_data
+  return agent_data, allocations
 
 
 if __name__ == "__main__":
@@ -83,15 +104,19 @@ if __name__ == "__main__":
     # if event_locations is an array, its assumed that this is a pre-specifed location
     # NB model also supports a string: Fixed/Random/Breaking Point
     # Get all combinations for given number of events, subject to a maximum if specified
+
+    # TODO check array of event_locations works correctly
+
     if "event_locations" not in master_config or isinstance(master_config["event_locations"], int):
       locations = sample_locations(n_locations, master_config["no_of_events"], master_config.get("event_locations", None))
     else:
-      locations = master_config["event_locations"]
+      locations = [master_config["event_locations"]]
     n_runs *= len(locations)
 
     print("Total runs = %d" % n_runs)
 
     results = pd.DataFrame(columns={"Deployed(%)", "Allocated(%)", "Time", "Event", "RunId", "Events", "EventStart", "EventDuration"})
+    allocations = pd.DataFrame(columns={"EventForce", "HomeForce", "Alliance", "PSUs", "RunId"})
 
     run_no = 0
 
@@ -105,9 +130,12 @@ if __name__ == "__main__":
         for l in locations:
           config["event_locations"] = l
           #print(config)
-          results = results.append(run(config, run_no, results), ignore_index=True)
+          agents, allocs = run(config, run_no, results)
+          results = results.append(agents, ignore_index=True)
+          allocations = allocations.append(allocs, ignore_index=True)
           run_no += 1
 
   results.to_csv(args.outfile, index=False)
+  allocations.to_csv(args.outfile.replace(".csv", "_allocations.csv"), index=False)
   print("Runtime: %ss" % (time.time() - start_time))
 

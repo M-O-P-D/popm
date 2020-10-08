@@ -2,6 +2,10 @@ import geopandas as gpd
 import pandas as pd
 from shapely import wkt
 
+# suppress deprecation warning we can't do anything about
+import warnings
+warnings.filterwarnings(action='ignore', category=FutureWarning, module=r'.*pyproj' )
+
 from mesa_geo.visualization.ModularVisualization import ModularServer
 #from mesa.visualization.modules import ChartModule
 from mesa.visualization.UserParam import UserSettableParameter
@@ -12,6 +16,8 @@ from .visualization.CustomChartVisualization import CustomChartModule
 
 from .portrayal import portray_map
 from .model import PublicOrderPolicing
+from .initialisation import load_force_data
+
 
 # load this data once only (its a bottleneck and its constant anyway)
 df = pd.read_csv("./data/force_centroid_routes.zip")
@@ -78,7 +84,8 @@ model_params = {
     5,
     description="The timestep length in minutes"
   ),
-  "routes": gpd.GeoDataFrame(df).set_index(["origin", "destination"])
+  "routes": gpd.GeoDataFrame(df).set_index(["origin", "destination"]),
+  "force_data": load_force_data()
 }
 
 chart_element = CustomChartModule(
