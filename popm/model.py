@@ -15,7 +15,7 @@ class PublicOrderPolicing(Model):
   An agent-based model of resource allocation in response to public order events.
   Source code at https://github.com/M-O-P-D/popm
   """
-  def __init__(self, no_of_events, event_resources, event_start, event_duration, staff_absence, timestep, event_locations, routes): #params...
+  def __init__(self, no_of_events, event_resources, event_start, event_duration, staff_absence, timestep, event_locations, routes, force_data): #params...
 
     self.log = ["Initialising model"]
 
@@ -51,7 +51,6 @@ class PublicOrderPolicing(Model):
 
     self.routes = routes
 
-    force_data = load_force_data()
     # create PSU dataset (which appends to force data too, so must do this *before* creating the force agents)
     psu_data = create_psu_data(force_data, staff_absence)
 
