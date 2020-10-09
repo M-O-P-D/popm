@@ -52,16 +52,13 @@ def run(config, run_no, results):
   allocations = pd.DataFrame.from_dict(Counter(allocation_data), orient="index", columns=["PSUs"]).reset_index()
   # split the to, from column
   allocations["EventForce"] = allocations["index"].apply(lambda e: e[0])
-  allocations["HomeForce"] = allocations["index"].apply(lambda e: e[1])
-  allocations["EventAlliance"] = allocations["EventForce"].apply(lambda e: force_data[force_data.name == e]["Alliance"].values[0])
-  allocations["HomeAlliance"] = allocations["HomeForce"].apply(lambda e: force_data[force_data.name == e]["Alliance"].values[0])
-  allocations["Alliance"] = allocations["EventAlliance"] == allocations["HomeAlliance"]
+  allocations["AssignedForce"] = allocations["index"].apply(lambda e: e[1])
+  allocations["EventAlliance"] = allocations["AssignedForce"].apply(lambda e: force_data[force_data.name == e]["Alliance"].values[0])
+  allocations["AssignedAlliance"] = allocations["AssignedForce"].apply(lambda e: force_data[force_data.name == e]["Alliance"].values[0])
+  allocations["Alliance"] = allocations["EventAlliance"] == allocations["AssignedAlliance"]
   allocations["RunId"] = run_no
   allocations["Requirement"] = config["event_resources"] / PSU_OFFICERS
-  allocations.drop(["index", "EventAlliance", "HomeAlliance"], axis=1, inplace=True)
-
-  print(allocations)
-
+  allocations.drop(["index", "EventAlliance", "AssignedAlliance"], axis=1, inplace=True)
   model.run_model()
 
   #model_data = model.datacollector.get_model_vars_dataframe() * 100.0 / config["event_resources"] / config["no_of_events"]
@@ -116,7 +113,7 @@ if __name__ == "__main__":
     print("Total runs = %d" % n_runs)
 
     results = pd.DataFrame(columns={"Deployed(%)", "Allocated(%)", "Time", "Event", "RunId", "Events", "EventStart", "EventDuration"})
-    allocations = pd.DataFrame(columns={"EventForce", "HomeForce", "Alliance", "PSUs", "RunId"})
+    allocations = pd.DataFrame(columns={"EventForce", "AssignedForce", "Alliance", "PSUs", "RunId"})
 
     run_no = 0
 

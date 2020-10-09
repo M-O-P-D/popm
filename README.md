@@ -72,6 +72,22 @@ If the dependencies don't install, giving errors like `undefined symbol: Error_G
 
 TODO...
 
+## Profiling
+
+Install `kcachegrind` and `pyprof2calltree`, then profile using `cProfile` e.g:
+
+```
+$ python -m cProfile -o profile.log batch.py scenario/test.json scenario/test.csv
+```
+
+And visualise like so:
+
+```
+$ pyprof2calltree -k -i profile.log
+```
+
+Or just use `pstats` for a simpler text visualisation (without call graphs)
+
 ## Data Sources
 
 - Boundary data: [http://geoportal.statistics.gov.uk](http://geoportal.statistics.gov.uk/datasets/police-force-areas-december-2016-ultra-generalised-clipped-boundaries-in-england-and-wales-1?geometry=-22.401%2C48.023%2C18.117%2C57.305)
