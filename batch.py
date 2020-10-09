@@ -17,7 +17,7 @@ from shapely import wkt
 
 from popm.model import PublicOrderPolicing
 from popm.agents import ForcePSUAgent
-from popm.utils import sample_locations
+from popm.utils import sample_locations, sample_locations_quasi, get_offset
 from popm.initialisation import load_force_data, PSU_OFFICERS
 
 def get_name(model, unique_id):
@@ -87,7 +87,6 @@ if __name__ == "__main__":
 
   parser = argparse.ArgumentParser(description="popm batch run")
   parser.add_argument("config", type=str, help="the model configuration file (json)")
-  parser.add_argument("outfile", type=str, help="the output csv file")
   args = parser.parse_args()
 
   start_time = time.time()
@@ -105,7 +104,7 @@ if __name__ == "__main__":
     # TODO check array of event_locations works correctly
 
     if "event_locations" not in master_config or isinstance(master_config["event_locations"], int):
-      locations = sample_locations(n_locations, master_config["no_of_events"], master_config.get("event_locations", None))
+      locations = sample_locations_quasi(n_locations, master_config["no_of_events"], master_config.get("event_locations", None))
     else:
       locations = [master_config["event_locations"]]
     n_runs *= len(locations)
@@ -126,13 +125,12 @@ if __name__ == "__main__":
         config["event_start"] = t
         for l in locations:
           config["event_locations"] = l
-          #print(config)
           agents, allocs = run(config, run_no, results)
           results = results.append(agents, ignore_index=True)
           allocations = allocations.append(allocs, ignore_index=True)
           run_no += 1
 
-  results.to_csv(args.outfile, index=False)
-  allocations.to_csv(args.outfile.replace(".csv", "_allocations.csv"), index=False)
+  results.to_csv(args.config.replace(".json", "%d.csv" % get_offset()), index=False)
+  allocations.to_csv(args.config.replace(".json", "_allocations%d.csv" % get_offset()), index=False)
   print("Runtime: %ss" % (time.time() - start_time))
 
