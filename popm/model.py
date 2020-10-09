@@ -1,3 +1,4 @@
+import numpy as np
 from mesa import Model
 from mesa.time import SimultaneousActivation
 from mesa.datacollection import DataCollector
@@ -73,12 +74,13 @@ class PublicOrderPolicing(Model):
     if isinstance(event_locations, str) and event_locations == "Breaking Point":
       self.event_locations = [0, 4, 13]
     # otherwise random (with or without fixed seed, see above)
-    elif isinstance(event_locations, list):
+    elif isinstance(event_locations, (list, np.ndarray)):
       if len(event_locations) != no_of_events:
         raise ValueError("event number (%d) and locations (%s) mismatch" % (no_of_events, event_locations))
       self.event_locations = event_locations
     else:
       self.event_locations = self.random.sample(list(force_data.index.values), min(no_of_events, len(force_data)))
+
     event_data = initialise_event_data(self, event_resources, event_start, event_duration, force_data)
     self.log.append("Events started in %s" % event_data["name"].values)
     factory = AgentCreator(PublicOrderEventAgent, { "model": self}, crs="epsg:27700")
@@ -88,9 +90,7 @@ class PublicOrderPolicing(Model):
       self.schedule.add(agent)
 
     self.running = True # doesnt work?
-
     # now assign PSUs to events
-    # TODO cache routes
     allocate(event_agents, force_agents, psu_agents, self.routes, self.log)
 
   def time(self):
