@@ -74,7 +74,7 @@ class PublicOrderPolicing(Model):
     if isinstance(event_locations, str) and event_locations == "Breaking Point":
       self.event_locations = [0, 4, 13]
     # otherwise random (with or without fixed seed, see above)
-    elif isinstance(event_locations, (list, np.ndarray)):
+    elif isinstance(event_locations, (tuple, list, np.ndarray)):
       if len(event_locations) != no_of_events:
         raise ValueError("event number (%d) and locations (%s) mismatch" % (no_of_events, event_locations))
       self.event_locations = event_locations
