@@ -6,10 +6,10 @@ import json
 import time
 import pandas as pd
 import argparse
-import warnings
 from collections import Counter
 
 # suppress deprecation warning we can't do anything about
+import warnings
 warnings.filterwarnings(action='ignore', category=FutureWarning, module=r'.*pyproj' )
 
 import geopandas as gpd
@@ -17,7 +17,7 @@ from shapely import wkt
 
 from popm.model import PublicOrderPolicing
 from popm.agents import ForcePSUAgent
-from popm.utils import sample_locations, sample_locations_quasi, get_offset
+from popm.utils import sample_all_locations, sample_locations_quasi, run_context
 from popm.initialisation import load_force_data, PSU_OFFICERS
 
 def get_name(model, unique_id):
@@ -64,12 +64,13 @@ def run(config, run_no, results):
   #model_data = model.datacollector.get_model_vars_dataframe() * 100.0 / config["event_resources"] / config["no_of_events"]
   #print(model_data.loc[[index_1h, index_4h]])
   # indices for KPI metrics
-  index_1h = (config["event_start"] + 1) / model.timestep
-  index_4h = (config["event_start"] + 4) / model.timestep
-  index_8h = (config["event_start"] + 8) / model.timestep
+  # index_1h = (config["event_start"] + 1) / model.timestep
+  # index_4h = (config["event_start"] + 4) / model.timestep
+  # index_8h = (config["event_start"] + 8) / model.timestep
+  indices_1h = [(config["event_start"] + h) / model.timestep for h in range(25) ]
 
   agent_data = model.datacollector.get_agent_vars_dataframe().dropna()
-  agent_data = agent_data.loc[agent_data.index.isin([index_1h, index_4h, index_8h], level="Step")]
+  agent_data = agent_data.loc[agent_data.index.isin(indices_1h, level="Step")]
   agent_data.Allocated *= 100.0 / config["event_resources"]
   agent_data.Deployed *= 100.0 / config["event_resources"]
   agent_data.rename({"Allocated": "Allocated(%)", "Deployed": "Deployed(%)"}, axis=1, inplace=True)
@@ -91,22 +92,28 @@ if __name__ == "__main__":
 
   start_time = time.time()
 
+  rank, size = run_context()
+
   # load config
   with open(args.config) as f:
     master_config = json.load(f)
 
-    n_runs =  len(master_config["event_resources"]) * len(master_config["event_start"])
+    n_runs = len(master_config["event_resources"]) * len(master_config["event_start"])
 
-    # if event_locations is an array, its assumed that this is a pre-specifed location
     # NB model also supports a string: Fixed/Random/Breaking Point
     # Get all combinations for given number of events, subject to a maximum if specified
 
-    # TODO check array of event_locations works correctly
-
-    if "event_locations" not in master_config or isinstance(master_config["event_locations"], int):
-      locations = sample_locations_quasi(n_locations, master_config["no_of_events"], master_config.get("event_locations", None))
+    # event_locations sampling behaviour:
+    # - if not specifed, sample all combinations
+    # - if an integer, sample that many combinations
+    # - if an array, use the values as the event locations (each one itself an array)
+    # - if a string [web client only], use pre-specified random or fixed locations
+    if "event_locations" not in master_config:
+      locations = sample_all_locations(n_locations, master_config["no_of_events"])
+    elif isinstance(master_config["event_locations"], int):
+      locations = sample_locations_quasi(n_locations, master_config["no_of_events"], master_config["event_locations"])
     else:
-      locations = [master_config["event_locations"]]
+      locations = master_config["event_locations"]
     n_runs *= len(locations)
 
     print("Total runs = %d" % n_runs)
@@ -130,7 +137,7 @@ if __name__ == "__main__":
           allocations = allocations.append(allocs, ignore_index=True)
           run_no += 1
 
-  results.to_csv(args.config.replace(".json", "%d.csv" % get_offset()), index=False)
-  allocations.to_csv(args.config.replace(".json", "_allocations%d.csv" % get_offset()), index=False)
+  results.to_csv(args.config.replace(".json", "%d-%d.csv" % (rank, size)), index=False)
+  allocations.to_csv(args.config.replace(".json", "_allocations%d-%d.csv" % (rank, size)), index=False)
   print("Runtime: %ss" % (time.time() - start_time))
 

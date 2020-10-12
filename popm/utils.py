@@ -31,14 +31,14 @@ def hmm(t):
   m = int((t - h) * 60)
   return "%dh%02dm" % (h, m)
 
-# use the MPI rank to offset the samples
-def get_offset():
+# use the MPI rank and size to offset the samples
+def run_context():
   try:
     import mpi4py.MPI as mpi
-    return mpi.COMM_WORLD.rank
+    return mpi.COMM_WORLD.rank, mpi.COMM_WORLD.size
   except Exception:
     # no MPI is not an error
-    return 0
+    return 0,1
 
 # this will not perform well for n_events > 4
 def sample_locations_randomly(n_locations, n_events, max_samples):
@@ -50,29 +50,34 @@ def sample_locations_randomly(n_locations, n_events, max_samples):
   return locations
 
 # samples
-def sample_locations(n_locations, n_events, max_samples):
+def sample_all_locations(n_locations, n_events):
   n_combs = math.comb(n_locations, n_events)
-  step = n_combs // max_samples
+  offset, step = run_context()
   combs = combinations(range(n_locations), n_events)
-  if max_samples is not None:
-    return list(islice(combs, get_offset(), n_combs, step))
-  return list(combs)
-
+  return list(islice(combs, offset, n_combs, step))
 
 def sample_locations_quasi(n_locations, n_events, max_samples):
 
+  n_combs = math.comb(n_locations, n_events)
+  rank, size = run_context()
   if max_samples is None:
-    return list(combinations(range(n_locations), n_events))
+    max_samples = n_combs
+  if max_samples > n_combs:
+    raise ValueError("Cannot oversample combination space using quasirandom sampling, use pseudorandom instead")
+  # split samples as evenly as possible over processes
+  max_samples = hl.prob2IntFreq(np.full(size, 1/size), max_samples)["freq"][rank]
 
-  locations = []
-  offsets = np.full(n_events, get_offset()) # offset vector to avoid duplicating values in parallel runs
+  if max_samples == 0:
+    return []
 
-  # need to reject results containing duplicated locations, so oversample
-  skips = max_samples*2
-  while len(locations) < max_samples:
-    seq = (hl.sobolSequence(n_events, max_samples*2, skips) * n_locations).astype(int)
-    skips *= 2
-    locations.extend([(s+offsets)%n_locations for s in seq if len(set(s)) == n_events])
+  # workaround for issue with skipping being truncated to a power of two is to sample all the numbers in every process,
+  # then take a unique chunk to ensure we get different parts of the sequence in each process
+  seq = np.sort((hl.sobolSequence(1, max_samples*size, 0)[max_samples*rank:max_samples*(rank+1),0] * n_combs).astype(int))
 
-  return locations[:max_samples]
+  # need to work in order, with relative offsets with generator
+  seq = np.diff(seq, prepend=0)
+
+  combs = combinations(range(n_locations), n_events)
+  locations = [next(islice(combs, s-1, None)) for s in seq]
+  return locations
 
