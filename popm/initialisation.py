@@ -69,6 +69,9 @@ def load_force_data():
   force_data = force_data.merge(centroids.rename({"geometry": "centroid"}, axis=1)[["name", "centroid"]], on="name")
   force_data.centroid = force_data.centroid.apply(serialise_geometry)
 
+  # ensure data is not geographically linked by sorting alphabetically
+  force_data = force_data.sort_values(["name"]).reset_index(drop=True)
+
   return force_data
 
 def create_psu_data(forces, staff_absence):
