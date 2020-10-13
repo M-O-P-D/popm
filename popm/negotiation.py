@@ -26,11 +26,12 @@ def rank(forces, name, routes, event_end_minus1):
     if f.name != name:
       despatch_time += routes.loc[f.name, name]["time"]
     if despatch_time < event_end_minus1:
-      ranks.append((f.name, f.available_psus / despatch_time))
+      ranks.append((f.name, (f.available_psus - f.reserved_psus) / despatch_time))
   return sorted(ranks, key=lambda t: -t[1])
 
 def mark_psu_assigned(force_area, event_agent, psu_agents, include_reserved=False):
   avail = [a for a in psu_agents if a.name == force_area.name and not a.assigned and (include_reserved or not a.reserved)]
+
   if len(avail) == 0:
     return #raise ValueError("no psu available for dispatch from %s to %s" % (force_name, event_location))
   avail[0].assigned = True
@@ -80,7 +81,7 @@ def allocate(event_agents, force_agents, psu_agents, routes, log):
       for r in ranks:
         f = find_force(force_agents, r[0])
         allocated = 0
-        while req > 0 and f.available_psus > 0:
+        while req > 0 and (f.available_psus - f.reserved_psus) > 0:
           mark_psu_assigned(f, a, psu_agents)
           req -= PSU_OFFICERS
           a.resources_allocated += PSU_OFFICERS
@@ -100,7 +101,7 @@ def allocate(event_agents, force_agents, psu_agents, routes, log):
       for r in ranks:
         f = find_force(force_agents, r[0])
         allocated = 0
-        while req > 0 and f.available_psus > 0:
+        while req > 0 and f.available_psus - f.reserved_psus > 0:
           mark_psu_assigned(f, a, psu_agents)
           req -= PSU_OFFICERS
           a.resources_allocated += PSU_OFFICERS
