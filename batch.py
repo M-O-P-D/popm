@@ -50,6 +50,7 @@ def run(config, run_no):
 
   allocation_data = [(a.assigned_to, a.name) for a in model.schedule.agents if isinstance(a, ForcePSUAgent) and a.assigned]
   allocations = pd.DataFrame.from_dict(Counter(allocation_data), orient="index", columns=["PSUs"]).reset_index()
+
   # split the to, from column
   allocations["EventForce"] = allocations["index"].apply(lambda e: e[0])
   allocations["AssignedForce"] = allocations["index"].apply(lambda e: e[1])
@@ -61,8 +62,6 @@ def run(config, run_no):
   allocations.drop(["index", "EventAlliance", "AssignedAlliance"], axis=1, inplace=True)
   model.run_model()
 
-  #model_data = model.datacollector.get_model_vars_dataframe() * 100.0 / config["event_resources"] / config["no_of_events"]
-  #print(model_data.loc[[index_1h, index_4h]])
   # indices for KPI metrics
   # index_1h = (config["event_start"] + 1) / model.timestep
   # index_4h = (config["event_start"] + 4) / model.timestep
@@ -73,7 +72,7 @@ def run(config, run_no):
   agent_data = agent_data.loc[agent_data.index.isin(indices_1h, level="Step")]
   agent_data.Allocated *= 100.0 / config["event_resources"]
   agent_data.Deployed *= 100.0 / config["event_resources"]
-  agent_data.rename({"Allocated": "Allocated(%)", "Deployed": "Deployed(%)"}, axis=1, inplace=True)
+  agent_data.rename({"Allocated": "AllocatedPct", "Deployed": "DeployedPct"}, axis=1, inplace=True)
   agent_data["Time"] = agent_data.index.get_level_values(0) * config["timestep"] / 60
   agent_data["Event"] = [get_name(model, uid) for uid in agent_data.index.get_level_values(1)]
   agent_data["RunId"] = run_no
@@ -117,12 +116,13 @@ if __name__ == "__main__":
     n_runs *= len(locations)
 
     print("Total runs = %d" % n_runs)
-
-    deployments = pd.DataFrame(columns=["RunId", "Time", "Event", "Events", "EventStart", "EventDuration", "Deployed(%)", "Allocated(%)"])
-    allocations = pd.DataFrame(columns=["RunId", "EventForce", "AssignedForce", "Alliance", "PSUs"])
-
     # make run_no unique across multiple processes (note exact no. of runs might be different for each process, so just offset by 1e6)
     run_no = rank * 1000000
+
+    location_lookup = pd.DataFrame(index=range(run_no, run_no+n_runs), columns={"EventLocations": ""})
+    location_lookup.index.rename("RunId", inplace=True)
+    deployments = pd.DataFrame(columns=["RunId", "Time", "Event", "Events", "EventStart", "EventDuration", "DeployedPct", "AllocatedPct"])
+    allocations = pd.DataFrame(columns=["RunId", "EventForces", "EventForce", "AssignedForce", "Alliance", "PSUs"])
 
     config = master_config.copy()
     # iterate event resource requirement
@@ -134,10 +134,12 @@ if __name__ == "__main__":
         for l in locations:
           config["event_locations"] = l
           agents, allocs = run(config, run_no)
+          location_lookup.loc[run_no, "EventLocations"] = "/".join(sorted(allocs.EventForce.unique()))
           deployments = deployments.append(agents, ignore_index=True)
           allocations = allocations.append(allocs, ignore_index=True)
           run_no += 1
 
+  location_lookup.to_csv(args.config.replace(".json", "_locations%d-%d.csv" % (rank, size)))
   deployments.to_csv(args.config.replace(".json", "%d-%d.csv" % (rank, size)), index=False)
   allocations.to_csv(args.config.replace(".json", "_allocations%d-%d.csv" % (rank, size)), index=False)
   print("Runtime: %ss" % (time.time() - start_time))
