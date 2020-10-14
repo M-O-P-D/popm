@@ -35,7 +35,7 @@ n_locations = len(routes.index.levels[0])
 force_data = load_force_data()
 
 
-def run(config, run_no, results):
+def run(config, run_no):
 
   model = PublicOrderPolicing(
     config["no_of_events"],
@@ -118,10 +118,11 @@ if __name__ == "__main__":
 
     print("Total runs = %d" % n_runs)
 
-    results = pd.DataFrame(columns={"Deployed(%)", "Allocated(%)", "Time", "Event", "RunId", "Events", "EventStart", "EventDuration"})
-    allocations = pd.DataFrame(columns={"EventForce", "AssignedForce", "Alliance", "PSUs", "RunId"})
+    deployments = pd.DataFrame(columns=["RunId", "Time", "Event", "Events", "EventStart", "EventDuration", "Deployed(%)", "Allocated(%)"])
+    allocations = pd.DataFrame(columns=["RunId", "EventForce", "AssignedForce", "Alliance", "PSUs"])
 
-    run_no = 0
+    # make run_no unique across multiple processes (note exact no. of runs might be different for each process, so just offset by 1e6)
+    run_no = rank * 1000000
 
     config = master_config.copy()
     # iterate event resource requirement
@@ -132,12 +133,12 @@ if __name__ == "__main__":
         config["event_start"] = t
         for l in locations:
           config["event_locations"] = l
-          agents, allocs = run(config, run_no, results)
-          results = results.append(agents, ignore_index=True)
+          agents, allocs = run(config, run_no)
+          deployments = deployments.append(agents, ignore_index=True)
           allocations = allocations.append(allocs, ignore_index=True)
           run_no += 1
 
-  results.to_csv(args.config.replace(".json", "%d-%d.csv" % (rank, size)), index=False)
+  deployments.to_csv(args.config.replace(".json", "%d-%d.csv" % (rank, size)), index=False)
   allocations.to_csv(args.config.replace(".json", "_allocations%d-%d.csv" % (rank, size)), index=False)
   print("Runtime: %ss" % (time.time() - start_time))
 
