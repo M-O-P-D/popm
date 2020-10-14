@@ -16,7 +16,7 @@ def run(config):
     for f in files:
       df = df.append(pd.read_csv(f), ignore_index=True)
       os.remove(f)
-    df.to_csv("scenario/%s%s.csv" % (config, tables[t]), index=False)
+    df.to_csv("scenario/%s%s.zip" % (config, tables[t]), compression="zip", index=False)
 
 
 if __name__ == "__main__":
