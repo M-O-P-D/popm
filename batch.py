@@ -122,7 +122,7 @@ if __name__ == "__main__":
     location_lookup = pd.DataFrame(index=range(run_no, run_no+n_runs), columns={"EventLocations": ""})
     location_lookup.index.rename("RunId", inplace=True)
     deployments = pd.DataFrame(columns=["RunId", "Time", "Event", "Events", "EventStart", "EventDuration", "DeployedPct", "AllocatedPct"])
-    allocations = pd.DataFrame(columns=["RunId", "EventForces", "EventForce", "AssignedForce", "Alliance", "PSUs"])
+    allocations = pd.DataFrame(columns=["RunId", "EventForce", "AssignedForce", "Alliance", "PSUs"])
 
     config = master_config.copy()
     # iterate event resource requirement
