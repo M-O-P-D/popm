@@ -1,4 +1,3 @@
-from .utils import serialise_geometry
 from .initialisation import PSU_OFFICERS
 from .agents import ForcePSUAgent
 
@@ -38,8 +37,7 @@ def mark_psu_assigned(force_area, event_agent, psu_agents, include_reserved=Fals
   avail[0].dispatched = False
   avail[0].deployed = False
   avail[0].assigned_to = event_agent.name #event_location
-  # text serialise to avoid TypeError: Object of type Point is not JSON serializable
-  avail[0].dest = serialise_geometry(event_agent.shape)
+  avail[0].dest = event_agent.name
   avail[0].dest_id = event_agent.unique_id
 
 def allocate(event_agents, force_agents, psu_agents, routes, log):

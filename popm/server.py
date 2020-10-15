@@ -24,6 +24,8 @@ df = pd.read_csv("./data/force_centroid_routes.zip")
 df["geometry"] = df["geometry"].apply(wkt.loads)
 df["time"] = df["time"] / 3600.0 # convert travel time seconds to hours
 
+force_data, centroids = load_force_data()
+
 model_params = {
   "no_of_events": UserSettableParameter(
     "slider",
@@ -85,7 +87,8 @@ model_params = {
     description="The timestep length in minutes"
   ),
   "routes": gpd.GeoDataFrame(df).set_index(["origin", "destination"]),
-  "force_data": load_force_data()
+  "force_data": force_data,
+  "centroids": centroids
 }
 
 chart_element = CustomChartModule(

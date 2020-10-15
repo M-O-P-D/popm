@@ -6,7 +6,7 @@ import numpy as np
 #from math import atan2, sin, cos, sqrt
 
 from .initialisation import PSU_OFFICERS
-from .utils import serialise_geometry, deserialise_geometry, hmm
+from .utils import hmm#, serialise_geometry, deserialise_geometry, hmm
 
 class ForceAreaAgent(GeoAgent):
 
@@ -46,7 +46,6 @@ class ForcePSUAgent(GeoAgent):
     self.deployed = False
     self.dest = None
     self.dest_id = None
-    self.home = serialise_geometry(self.shape)
 
     # TODO Can't use a ref to agents directly as its not JSON serialisable
     # self.event_id = None
@@ -84,7 +83,7 @@ class ForcePSUAgent(GeoAgent):
     if (not self.assigned and not self.dispatched) or self.dest is None:
       return
 
-    dest = deserialise_geometry(self.dest)
+    dest = self.model.centroids.loc[self.dest, "geometry"]
 
     # TODO performance is awful, cache interpolations
     #r = self.model.active_routes[(self.__get_force_agent().unique_id, self.dest_id)]
@@ -181,7 +180,7 @@ class PublicOrderEventAgent(GeoAgent):
       for a in psus:
         self.resources_present -= PSU_OFFICERS
         a.assigned = False
-        a.dest = a.home
+        a.dest = a.name
         #a.assigned_to = None
         a.deployed = False
 
