@@ -14,11 +14,11 @@ _lonlat_proj = pyproj.Proj(init='epsg:4326')
 _proj_bng2lonlat = pyproj.Transformer.from_proj(_bng_proj, _lonlat_proj)
 _proj_lonlat2bng = pyproj.Transformer.from_proj(_lonlat_proj, _bng_proj)
 
-def serialise_geometry(geom):
-  return geom.wkt
+# def serialise_geometry(geom):
+#   return geom.wkt
 
-def deserialise_geometry(wkt):
-  return shapely.wkt.loads(wkt)
+# def deserialise_geometry(wkt):
+#   return shapely.wkt.loads(wkt)
 
 def bng2lonlat(shape):
   return transform(_proj_bng2lonlat.transform, shape)

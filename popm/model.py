@@ -16,7 +16,7 @@ class PublicOrderPolicing(Model):
   An agent-based model of resource allocation in response to public order events.
   Source code at https://github.com/M-O-P-D/popm
   """
-  def __init__(self, no_of_events, event_resources, event_start, event_duration, staff_absence, timestep, event_locations, routes, force_data): #params...
+  def __init__(self, no_of_events, event_resources, event_start, event_duration, staff_absence, timestep, event_locations, routes, force_data, centroids): #params...
 
     self.log = ["Initialising model"]
 
@@ -51,9 +51,11 @@ class PublicOrderPolicing(Model):
     self.grid = GeoSpace(crs="epsg:27700")
 
     self.routes = routes
+    # cache centroids to avoid (de)serialisation inefficiencies
+    self.centroids = centroids
 
     # create PSU dataset (which appends to force data too, so must do this *before* creating the force agents)
-    psu_data = create_psu_data(force_data, staff_absence)
+    psu_data = create_psu_data(force_data, centroids, staff_absence)
 
     # Set up the force agents
     factory = AgentCreator(ForceAreaAgent, {"model": self}, crs="epsg:27700")
@@ -81,7 +83,7 @@ class PublicOrderPolicing(Model):
     else:
       self.event_locations = self.random.sample(list(force_data.index.values), min(no_of_events, len(force_data)))
 
-    event_data = initialise_event_data(self, event_resources, event_start, event_duration, force_data)
+    event_data = initialise_event_data(self, event_resources, event_start, event_duration, force_data, centroids)
     self.log.append("Events started in %s" % event_data["name"].values)
     factory = AgentCreator(PublicOrderEventAgent, { "model": self}, crs="epsg:27700")
     event_agents = factory.from_GeoDataFrame(event_data)

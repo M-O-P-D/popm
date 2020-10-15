@@ -9,7 +9,7 @@ from shapely.geometry import Point
 from shapely.ops import cascaded_union
 from shapely import wkt
 
-from .utils import serialise_geometry, deserialise_geometry
+#from .utils import serialise_geometry, deserialise_geometry
 
 PSU_OFFICERS = 25
 
@@ -59,22 +59,21 @@ def load_force_data():
   # When making the change, be mindful of axis order changes: https://pyproj4.github.io/pyproj/stable/gotchas.html#axis-order-changes-in-proj-6
 
   # extract boundary data
-  columns = ['name', 'geometry', 'Officers', 'POP', 'Percentage', 'Alliance', 'population', 'households', 'reserved_psus'] + CORE_FUNCTIONS + [f + "_POP" for f in CORE_FUNCTIONS]
+  columns = ['name', 'geometry', 'Officers', 'POP', 'Percentage', 'Alliance', 'population', 'households', 'reserved_psus'] \
+    + CORE_FUNCTIONS + [f + "_POP" for f in CORE_FUNCTIONS]
   force_data = gpd.GeoDataFrame(gdf[columns])
 
   # extract centroid data
-  centroids = gpd.GeoDataFrame(gdf[["name", "Alliance"]], geometry=gpd.points_from_xy(gdf.LONG, gdf.LAT), crs = {"init": "epsg:4326"}).to_crs(epsg=27700)
-
-  # add centroid column, but not as Shapely object as will get a serialisation error
-  force_data = force_data.merge(centroids.rename({"geometry": "centroid"}, axis=1)[["name", "centroid"]], on="name")
-  force_data.centroid = force_data.centroid.apply(serialise_geometry)
+  centroids = gpd.GeoDataFrame(gdf[["name", "Alliance"]], geometry=gpd.points_from_xy(gdf.LONG, gdf.LAT), crs={"init": "epsg:4326"}) \
+    .to_crs(epsg=27700) \
+    .set_index("name", drop=True)
 
   # ensure data is not geographically linked by sorting alphabetically
   force_data = force_data.sort_values(["name"]).reset_index(drop=True)
 
-  return force_data
+  return force_data, centroids
 
-def create_psu_data(forces, staff_absence):
+def create_psu_data(forces, centroids, staff_absence):
 
   # Assumption (as per netlogo) that each core function has 200 essential officers that can't be deployed elsewhere
 
@@ -90,7 +89,12 @@ def create_psu_data(forces, staff_absence):
   forces["available_psus"] = np.floor(avail / PSU_OFFICERS).astype(int)
   forces["dispatched_psus"] = 0
 
-  psu_data = forces[["name", "Alliance", "geometry", "centroid"]]
+  psu_data = forces[["name", "Alliance", "geometry"]].copy()
+  # switch from boundary to centroid
+  psu_data["geometry"] = centroids.loc[psu_data["name"]]["geometry"].values
+
+  # switch geometry from boundary to centroid
+  #TODO psu_data["geometry"] = centroids.loc[""] psu_data[]
   for _, r in forces.iterrows():
     n = r.available_psus
     nres = r.reserved_psus
@@ -106,16 +110,16 @@ def create_psu_data(forces, staff_absence):
 
   # all now live at force centroid for routing purposes
 
-  for name in forces.name:
-    single_psu_data = psu_data[psu_data.name == name]
-    for idx, r in single_psu_data.iterrows():
-      # p = deserialise_geometry(r["centroid"])
-      # x = p.x - rows * dx / 2
-      # y = p.y - rows * dy / 2
+  # for name in forces.name:
+  #   single_psu_data = psu_data[psu_data.name == name]
+  #   for idx, r in single_psu_data.iterrows():
+  #     # p = deserialise_geometry(r["centroid"])
+  #     # x = p.x - rows * dx / 2
+  #     # y = p.y - rows * dy / 2
 
-      # # NB // is integer division
-      psu_data.at[idx, "geometry"] = deserialise_geometry(r["centroid"]) #Point([x + j // rows * dx, y + j % rows * dy])
-      #print(psu_data.at[idx, "geometry"])
+  #     # # NB // is integer division
+  #     psu_data.at[idx, "geometry"] = r["centroid"] #Point([x + j // rows * dx, y + j % rows * dy])
+  #     #print(psu_data.at[idx, "geometry"])
 
   # # now covert geometry from the force area polygon a unique offset from the centroid
   # for name in forces.name:
@@ -145,13 +149,12 @@ def create_psu_data(forces, staff_absence):
   return psu_data
 
 
-def initialise_event_data(model, event_resources, event_start, event_duration, force_data):
+def initialise_event_data(model, event_resources, event_start, event_duration, force_data, centroids):
   # activate events as per parameters
-  event_data = force_data.loc[model.event_locations, ["name", "Alliance", "centroid", "geometry"]].copy()
+  event_data = force_data.loc[model.event_locations, ["name", "Alliance", "geometry"]].copy()
 
-  # copying both geometry and centroid then overwriting former with latter and deleting latter preserves the crs
-  event_data["geometry"] = event_data.centroid #.apply(deserialise_geometry)
-  event_data.drop("centroid", axis=1, inplace=True)
+  # switch from boundary to centroid
+  event_data["geometry"] = centroids.loc[event_data["name"]]["geometry"].values
 
   # no longer random in force area
   # for i, r in event_data.iterrows():

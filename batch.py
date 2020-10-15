@@ -32,7 +32,7 @@ df["geometry"] = df["geometry"].apply(wkt.loads)
 df["time"] = df["time"] / 3600.0 # convert travel time seconds to hours
 routes = gpd.GeoDataFrame(df).set_index(["origin", "destination"])
 n_locations = len(routes.index.levels[0])
-force_data = load_force_data()
+force_data, centroids = load_force_data()
 
 
 def run(config, run_no):
@@ -46,7 +46,8 @@ def run(config, run_no):
     config["timestep"],
     config["event_locations"],
     routes,
-    force_data)
+    force_data,
+    centroids)
 
   allocation_data = [(a.assigned_to, a.name) for a in model.schedule.agents if isinstance(a, ForcePSUAgent) and a.assigned]
   allocations = pd.DataFrame.from_dict(Counter(allocation_data), orient="index", columns=["PSUs"]).reset_index()
