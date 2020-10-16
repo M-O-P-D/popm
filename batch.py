@@ -74,7 +74,6 @@ def run(config, run_no):
     force_resources.loc[force_resources.name==f, "POP"] -= assigned_officers
     # do POP first
     avail = force_resources.loc[force_resources.name==f, "public_order_POP"].values[0]
-    print(f, assigned_officers, avail)
     if avail < assigned_officers:
       force_resources.loc[force_resources.name==f, "public_order_POP"] = 0
       assigned_officers -= avail
@@ -84,10 +83,10 @@ def run(config, run_no):
 
     # then other areas weighted proportionately
     # TODO this doesnt take into account
-    other_core_functions = CORE_FUNCTIONS
+    other_core_functions = CORE_FUNCTIONS.copy()
     other_core_functions.remove("public_order")
-    weights = [force_resources.loc[force_resources.name==f, func+"_POP"] for func in other_core_functions]
-    a = hl.prob2IntFreq(weights/sum(weights), assigned_officers)
+    weights = [force_resources.loc[force_resources.name==f, func+"_POP"].values[0] for func in other_core_functions]
+    a = hl.prob2IntFreq(weights/sum(weights), assigned_officers)["freq"]
 
     for i, func in enumerate(other_core_functions):
       force_resources.loc[force_resources.name==f, func+"_POP"] -= a[i]
