@@ -1,11 +1,13 @@
 #!/bin/bash
 
-#$ -m be
+#$ -m e
 #$ -M a.p.smith@leeds.ac.uk
 #$ -cwd -V
 #$ -l h_vmem=1G
-#$ -l h_rt=8:00:00
+#$ -l h_rt=12:00:00
 #$ -o log
 #$ -e log
+#$ -pe ib 20
 
-python batch.py "scenario/$1.json"
+mpirun python batch.py "scenario/$1.json"
+
