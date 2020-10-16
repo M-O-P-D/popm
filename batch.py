@@ -83,10 +83,11 @@ def run(config, run_no):
       break
 
     # then other areas weighted proportionately
+    # TODO this doesnt take into account
     other_core_functions = CORE_FUNCTIONS
     other_core_functions.remove("public_order")
-    w = [force_resources.loc[force_resources.name==f, func+"_POP"] for f in other_core_functions]
-    a = hl.prob2IntFreq(w/sum(w), assigned_officers)
+    weights = [force_resources.loc[force_resources.name==f, func+"_POP"] for func in other_core_functions]
+    a = hl.prob2IntFreq(weights/sum(weights), assigned_officers)
 
     for i, func in enumerate(other_core_functions):
       force_resources.loc[force_resources.name==f, func+"_POP"] -= a[i]
