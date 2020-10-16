@@ -7,7 +7,7 @@ import pandas as pd
 
 def run(config):
 
-  tables = {"[0-9]": "", "_locations": "_locations", "_allocations": "_allocations"}
+  tables = {"[0-9]": "", "_locations": "_locations", "_allocations": "_allocations", "_resources": "_resources" }
 
   for t in tables.keys():
     pattern = "scenario/%s%s*.csv" % (config, t)
