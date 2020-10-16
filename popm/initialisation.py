@@ -63,6 +63,12 @@ def load_force_data():
     + CORE_FUNCTIONS + [f + "_POP" for f in CORE_FUNCTIONS]
   force_data = gpd.GeoDataFrame(gdf[columns])
 
+  # adjust officer numbers to approximate shift patterns
+  SHIFT_ADJ = 2 # assume only half the officers are available at any one time
+  columns = ['Officers', 'POP'] + CORE_FUNCTIONS + [f + "_POP" for f in CORE_FUNCTIONS]
+  for c in columns:
+    force_data[c] //= SHIFT_ADJ
+
   # extract centroid data
   centroids = gpd.GeoDataFrame(gdf[["name", "Alliance"]], geometry=gpd.points_from_xy(gdf.LONG, gdf.LAT), crs={"init": "epsg:4326"}) \
     .to_crs(epsg=27700) \
@@ -97,7 +103,7 @@ def create_psu_data(forces, centroids, staff_absence):
   #TODO psu_data["geometry"] = centroids.loc[""] psu_data[]
   for _, r in forces.iterrows():
     n = r.available_psus
-    nres = r.reserved_psus
+    nres = min(r.reserved_psus, r.available_psus) # in case the reserve number is higher than the available
     name = forces.name[r.name] # no idea why r.name is a number not a string
     if n < 1:
       psu_data.drop(psu_data[psu_data.name == name].index, inplace=True)
