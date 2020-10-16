@@ -15,10 +15,12 @@ warnings.filterwarnings(action='ignore', category=FutureWarning, module=r'.*pypr
 import geopandas as gpd
 from shapely import wkt
 
+import humanleague as hl
+
 from popm.model import PublicOrderPolicing
 from popm.agents import ForcePSUAgent
 from popm.utils import sample_all_locations, sample_locations_quasi, run_context
-from popm.initialisation import load_force_data, PSU_OFFICERS
+from popm.initialisation import load_force_data, PSU_OFFICERS, CORE_FUNCTIONS
 
 def get_name(model, unique_id):
   for a in model.schedule.agents:
@@ -55,12 +57,40 @@ def run(config, run_no):
   # split the to, from column
   allocations["EventForce"] = allocations["index"].apply(lambda e: e[0])
   allocations["AssignedForce"] = allocations["index"].apply(lambda e: e[1])
-  allocations["EventAlliance"] = allocations["AssignedForce"].apply(lambda e: force_data[force_data.name == e]["Alliance"].values[0])
+  allocations["EventAlliance"] = allocations["EventForce"].apply(lambda e: force_data[force_data.name == e]["Alliance"].values[0])
   allocations["AssignedAlliance"] = allocations["AssignedForce"].apply(lambda e: force_data[force_data.name == e]["Alliance"].values[0])
-  allocations["Alliance"] = allocations["EventAlliance"] == allocations["AssignedAlliance"]
+  allocations["Alliance"] = (allocations["EventAlliance"] == allocations["AssignedAlliance"])
   allocations["RunId"] = run_no
   allocations["Requirement"] = config["event_resources"] / PSU_OFFICERS
   allocations.drop(["index", "EventAlliance", "AssignedAlliance"], axis=1, inplace=True)
+
+  force_resources = force_data[force_data.name.isin(allocations["AssignedForce"])][["name", "Alliance", "Officers", "POP"] + [c+"_POP" for c in CORE_FUNCTIONS]]
+  force_resources["RunId"] = run_no
+
+  psus = allocations[["AssignedForce", "PSUs"]].groupby("AssignedForce").sum()
+  for f in force_resources["name"].values:
+    assigned_officers = psus.loc[f, "PSUs"] * PSU_OFFICERS
+    force_resources.loc[force_resources.name==f, "Officers"] -= assigned_officers
+    force_resources.loc[force_resources.name==f, "POP"] -= assigned_officers
+    # do POP first
+    avail = force_resources.loc[force_resources.name==f, "public_order_POP"].values[0]
+    print(f, assigned_officers, avail)
+    if avail < assigned_officers:
+      force_resources.loc[force_resources.name==f, "public_order_POP"] = 0
+      assigned_officers -= avail
+    else:
+      force_resources.loc[force_resources.name==f, "public_order_POP"] -= assigned_officers
+      break
+
+    # then other areas weighted proportionately
+    other_core_functions = CORE_FUNCTIONS
+    other_core_functions.remove("public_order")
+    w = [force_resources.loc[force_resources.name==f, func+"_POP"] for f in other_core_functions]
+    a = hl.prob2IntFreq(w/sum(w), assigned_officers)
+
+    for i, func in enumerate(other_core_functions):
+      force_resources.loc[force_resources.name==f, func+"_POP"] -= a[i]
+
   model.run_model()
 
   # indices for KPI metrics
@@ -81,7 +111,7 @@ def run(config, run_no):
   agent_data["EventStart"] = config["event_start"]
   agent_data["EventDuration"] = config["event_duration"]
 
-  return agent_data, allocations
+  return agent_data, allocations, force_resources
 
 
 if __name__ == "__main__":
@@ -124,6 +154,7 @@ if __name__ == "__main__":
     location_lookup.index.rename("RunId", inplace=True)
     deployments = pd.DataFrame(columns=["RunId", "Time", "Event", "Events", "EventStart", "EventDuration", "DeployedPct", "AllocatedPct"])
     allocations = pd.DataFrame(columns=["RunId", "EventForce", "AssignedForce", "Alliance", "PSUs"])
+    resources = pd.DataFrame()
 
     config = master_config.copy()
     # iterate event resource requirement
@@ -134,14 +165,16 @@ if __name__ == "__main__":
         config["event_start"] = t
         for l in locations:
           config["event_locations"] = l
-          agents, allocs = run(config, run_no)
+          agents, allocs, res = run(config, run_no)
           location_lookup.loc[run_no, "EventLocations"] = "/".join(sorted(allocs.EventForce.unique()))
           deployments = deployments.append(agents, ignore_index=True)
           allocations = allocations.append(allocs, ignore_index=True)
+          resources = resources.append(res, ignore_index=True)
           run_no += 1
 
   location_lookup.to_csv(args.config.replace(".json", "_locations%d-%d.csv" % (rank, size)))
   deployments.to_csv(args.config.replace(".json", "%d-%d.csv" % (rank, size)), index=False)
   allocations.to_csv(args.config.replace(".json", "_allocations%d-%d.csv" % (rank, size)), index=False)
+  resources.to_csv(args.config.replace(".json", "_resources%d-%d.csv" % (rank, size)), index=False)
   print("Runtime: %ss" % (time.time() - start_time))
 

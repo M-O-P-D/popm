@@ -52,7 +52,7 @@ def load_force_data():
 
   gdf = gdf.merge(data, on="name", how="left", left_index=True).fillna(0).merge(populations, on="name")
 
-  # NOTE warnings:
+  # NOTE warnings (which have been silenced):
   # pandas/core/generic.py:5155: UserWarning: Geometry is in a geographic CRS. Results from 'area' are likely incorrect. Use 'GeoSeries.to_crs()'
   # to re-project geometries to a projected CRS before this operation.
   # pyproj/crs/crs.py:53: FutureWarning: '+init=<authority>:<code>' syntax is deprecated. '<authority>:<code>' is the preferred initialization method.
@@ -64,10 +64,12 @@ def load_force_data():
   force_data = gpd.GeoDataFrame(gdf[columns])
 
   # adjust officer numbers to approximate shift patterns
+  # NOTE this can cause small disrepancies in totals due to rounding
+  # TODO use hl.prob2IntFreq to ensure totals tally
   SHIFT_ADJ = 2 # assume only half the officers are available at any one time
   columns = ['Officers', 'POP'] + CORE_FUNCTIONS + [f + "_POP" for f in CORE_FUNCTIONS]
   for c in columns:
-    force_data[c] //= SHIFT_ADJ
+    force_data[c] = round(force_data[c]/SHIFT_ADJ).astype(int)
 
   # extract centroid data
   centroids = gpd.GeoDataFrame(gdf[["name", "Alliance"]], geometry=gpd.points_from_xy(gdf.LONG, gdf.LAT), crs={"init": "epsg:4326"}) \
