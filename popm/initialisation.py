@@ -9,6 +9,8 @@ from shapely.geometry import Point
 from shapely.ops import cascaded_union
 from shapely import wkt
 
+import humanleague as hl
+
 #from .utils import serialise_geometry, deserialise_geometry
 
 PSU_OFFICERS = 25
@@ -67,9 +69,26 @@ def load_force_data():
   # NOTE this can cause small disrepancies in totals due to rounding
   # TODO use hl.prob2IntFreq to ensure totals tally
   SHIFT_ADJ = 2 # assume only half the officers are available at any one time
-  columns = ['Officers', 'POP'] + CORE_FUNCTIONS + [f + "_POP" for f in CORE_FUNCTIONS]
-  for c in columns:
-    force_data[c] = round(force_data[c]/SHIFT_ADJ).astype(int)
+  # reduce totals
+  force_data[['Officers', 'POP']] //= SHIFT_ADJ
+
+  # reduce numbers in each category consistent with the new totals above
+  for i,r in force_data[CORE_FUNCTIONS].iterrows():
+    officers = r.to_numpy()
+    officers = officers / np.sum(officers)
+    officers = hl.prob2IntFreq(officers, force_data.loc[i, "Officers"])["freq"]
+    # couldnt figure out a way to do this without a loop
+    for j,f in enumerate(CORE_FUNCTIONS):
+      force_data.loc[i, f] = officers[j]
+
+  columns = [f + "_POP" for f in CORE_FUNCTIONS]
+  for i,r in force_data[columns].iterrows():
+    officers = r.to_numpy()
+    officers = officers / np.sum(officers)
+    officers = hl.prob2IntFreq(officers, force_data.loc[i, "POP"])["freq"]
+    # couldnt figure out a way to do this without a loop
+    for j,f in enumerate(columns):
+      force_data.loc[i, f] = officers[j]
 
   # extract centroid data
   centroids = gpd.GeoDataFrame(gdf[["name", "Alliance"]], geometry=gpd.points_from_xy(gdf.LONG, gdf.LAT), crs={"init": "epsg:4326"}) \
