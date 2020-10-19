@@ -43,7 +43,6 @@ def run_context():
 # this will not perform well for n_events > 4
 def sample_locations_randomly(n_locations, n_events, max_samples):
 
-  npgen = np.random.Generator(np.random.MT19937(19937))
   locations = list(combinations(range(n_locations), n_events))
   if max_samples is not None:
     return npgen.choice(locations, max_samples, replace=False)
@@ -80,4 +79,8 @@ def sample_locations_quasi(n_locations, n_events, max_samples):
   combs = combinations(range(n_locations), n_events)
   locations = [next(islice(combs, s-1, None)) for s in seq]
   return locations
+
+# seed generator differently for each process
+npbitgen = np.random.MT19937(19937 + run_context()[0])
+npgen = np.random.Generator(npbitgen)
 
