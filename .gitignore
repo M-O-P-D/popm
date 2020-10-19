@@ -133,5 +133,7 @@ data/PFAs-VECTOR-NAMES-Basic-with-Core-with-Alliance.csv
 
 .vscode/
 log/
-scenario/*.csv
+scenario/
+!scenario/*.json
+
 
