@@ -11,7 +11,7 @@ from shapely import wkt
 
 import humanleague as hl
 
-#from .utils import serialise_geometry, deserialise_geometry
+from .utils import npgen, npbitgen
 
 PSU_OFFICERS = 25
 
@@ -178,7 +178,7 @@ def create_psu_data(forces, centroids, staff_absence):
 
 def initialise_event_data(model, event_resources, event_start, event_duration, force_data, centroids):
   # activate events as per parameters
-  event_data = force_data.loc[model.event_locations, ["name", "Alliance", "geometry"]].copy()
+  event_data = force_data.loc[model.event_locations, ["name", "Alliance", "geometry"]].sample(frac=1, random_state=npbitgen).reset_index(drop=True)
 
   # switch from boundary to centroid
   event_data["geometry"] = centroids.loc[event_data["name"]]["geometry"].values
