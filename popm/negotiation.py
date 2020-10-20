@@ -42,9 +42,6 @@ def mark_psu_assigned(force_area, event_agent, psu_agents, include_reserved=Fals
 
 def allocate(event_agents, force_agents, psu_agents, routes, log):
 
-  # set up interpolatable routes for active PSUs
-  #active_routes = {}
-
   # ensure we allocate in-location first (to stop resources being taken by other areas)
   for a in event_agents:
     # allocate self resources
@@ -63,8 +60,6 @@ def allocate(event_agents, force_agents, psu_agents, routes, log):
       f.dispatched_psus += 1
       allocated += 1
     log.append("%d PSUs allocated from %s" % (allocated, f.name))
-
-    #active_routes[(f.unique_id, a.unique_id)] = None # TODO do we need empty arrays?
 
   for a in event_agents:
     # allocate self resources
@@ -88,8 +83,11 @@ def allocate(event_agents, force_agents, psu_agents, routes, log):
           allocated += 1
         if allocated > 0:
           log.append("%d PSUs allocated from alliance %s to %s (rank=%f)" % (allocated, f.name, a.name, r[1]))
-          # TODO cache route interps
-          # active_routes[(f.unique_id, a.unique_id)] = { "out": linestr_out.xy, "ret": linestr_ret.xy }
+
+  for a in event_agents:
+    # allocate self resources
+    f = find_force(force_agents, a.name)
+    req = a.resources_required - a.resources_allocated
 
     # if still not fully resourced, request other forces
     if req > 0:
@@ -108,12 +106,8 @@ def allocate(event_agents, force_agents, psu_agents, routes, log):
           allocated += 1
         if allocated > 0:
           log.append("%d PSUs allocated from %s to %s (rank=%f)" % (allocated, f.name, a.name, r[1]))
-          # TODO cache route interps
-          # active_routes[(f.unique_id, a.unique_id)] = { "out": linestr_out.xy, "ret": linestr_ret.xy }
 
     # if still not fully resourced, print a message
     if req > 0:
       log.append("** %s event cannot be fully resource allocated **" % a.name)
 
-  # TODO cache route interps
-  #return active_routes
