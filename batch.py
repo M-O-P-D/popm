@@ -19,7 +19,7 @@ import humanleague as hl
 
 from popm.model import PublicOrderPolicing
 from popm.agents import ForcePSUAgent
-from popm.utils import sample_all_locations, sample_locations_quasi, run_context
+from popm.utils import sample_all_locations, sample_locations_quasi, run_context, collate_and_write_results
 from popm.initialisation import load_force_data, PSU_OFFICERS, CORE_FUNCTIONS
 
 def get_name(model, unique_id):
@@ -172,9 +172,7 @@ if __name__ == "__main__":
           resources = resources.append(res, ignore_index=True)
           run_no += 1
 
-  location_lookup.to_csv(args.config.replace(".json", "_locations%d-%d.csv" % (rank, size)))
-  deployments.to_csv(args.config.replace(".json", "%d-%d.csv" % (rank, size)), index=False)
-  allocations.to_csv(args.config.replace(".json", "_allocations%d-%d.csv" % (rank, size)), index=False)
-  resources.to_csv(args.config.replace(".json", "_resources%d-%d.csv" % (rank, size)), index=False)
+  collate_and_write_results(args.config, location_lookup, deployments, allocations, resources)
+
   print("Runtime: %ss" % (time.time() - start_time))
 

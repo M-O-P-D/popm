@@ -2,6 +2,7 @@
 from itertools import combinations, islice
 import math
 import numpy as np
+import pandas as pd
 import pyproj
 from shapely.geometry import shape
 from shapely.ops import transform
@@ -34,11 +35,37 @@ def hmm(t):
 # use the MPI rank and size to offset the samples
 def run_context():
   try:
-    import mpi4py.MPI as mpi
-    return mpi.COMM_WORLD.rank, mpi.COMM_WORLD.size
+    from mpi4py import MPI
+    return MPI.COMM_WORLD.rank, MPI.COMM_WORLD.size
   except Exception:
     # no MPI is not an error
     return 0,1
+
+def collate_and_write_results(config, location_lookup, deployments, allocations, resources):
+
+  rank, size = run_context()
+
+  if size == 1:
+    # single-process case
+    location_lookup.to_csv(config.replace(".json", "_locations.csv")) # index is run id
+    deployments.to_csv(config.replace(".json", ".csv"), index=False)
+    allocations.to_csv(config.replace(".json", "_allocations.csv"), index=False)
+    resources.to_csv(config.replace(".json", "_resources.csv"), index=False)
+  else:
+    # root process gets data from all the others and writes it
+    from mpi4py import MPI
+    comm = MPI.COMM_WORLD
+
+    all_location_lookup = comm.gather(location_lookup, root=0)
+    all_deployments = comm.gather(deployments, root=0)
+    all_allocations = comm.gather(allocations, root=0)
+    all_resources = comm.gather(resources, root=0)
+    if rank == 0:
+      pd.concat(all_location_lookup).to_csv(config.replace(".json", "_locations.csv")) # index is run id
+      pd.concat(all_deployments).to_csv(config.replace(".json", ".csv"), index=False)
+      pd.concat(all_allocations).to_csv(config.replace(".json", "_allocations.csv"), index=False)
+      pd.concat(all_resources).to_csv(config.replace(".json", "_resources.csv"), index=False)
+
 
 # this will not perform well for n_events > 4
 def sample_locations_randomly(n_locations, n_events, max_samples):
