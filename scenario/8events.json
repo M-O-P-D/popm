@@ -1,0 +1,9 @@
+{
+  "no_of_events": 8,
+  "event_locations": 10000,
+  "event_resources": [500, 2000, 5000],
+  "event_start": [0],
+  "event_duration": 24,
+  "staff_absence": 0.0,
+  "timestep": 60
+}
