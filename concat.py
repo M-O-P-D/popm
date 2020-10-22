@@ -37,4 +37,5 @@ if __name__ == "__main__":
   parser.add_argument("config", type=str, help="the model configuration (without .json)")
   args = parser.parse_args()
 
+  print("DEPRECATED, use concat.sh")
   run(args.config)
