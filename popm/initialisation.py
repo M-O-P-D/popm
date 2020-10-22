@@ -11,13 +11,15 @@ from shapely import wkt
 
 import humanleague as hl
 
-from .utils import npgen, npbitgen
-
 PSU_OFFICERS = 25
 
 CORE_FUNCTIONS = ["emergency", "firearms", "major_incident", "public_order", "serious_crime", "custody"]
 
 CORE_FUNCTIONS_MIN = [80,80,80,0,80,80] # officers retained in each of the above functions
+
+from .utils import npgen, npbitgen
+
+
 
 def load_force_data():
 
@@ -65,31 +67,6 @@ def load_force_data():
     + CORE_FUNCTIONS + [f + "_POP" for f in CORE_FUNCTIONS]
   force_data = gpd.GeoDataFrame(gdf[columns])
 
-  # adjust officer numbers to approximate shift patterns
-  # NOTE this can cause small disrepancies in totals due to rounding
-  # TODO use hl.prob2IntFreq to ensure totals tally
-  SHIFT_ADJ = 2 # assume only half the officers are available at any one time
-  # reduce totals
-  force_data[['Officers', 'POP']] //= SHIFT_ADJ
-
-  # reduce numbers in each category consistent with the new totals above
-  for i,r in force_data[CORE_FUNCTIONS].iterrows():
-    officers = r.to_numpy()
-    officers = officers / np.sum(officers)
-    officers = hl.prob2IntFreq(officers, force_data.loc[i, "Officers"])["freq"]
-    # couldnt figure out a way to do this without a loop
-    for j,f in enumerate(CORE_FUNCTIONS):
-      force_data.loc[i, f] = officers[j]
-
-  columns = [f + "_POP" for f in CORE_FUNCTIONS]
-  for i,r in force_data[columns].iterrows():
-    officers = r.to_numpy()
-    officers = officers / np.sum(officers)
-    officers = hl.prob2IntFreq(officers, force_data.loc[i, "POP"])["freq"]
-    # couldnt figure out a way to do this without a loop
-    for j,f in enumerate(columns):
-      force_data.loc[i, f] = officers[j]
-
   # extract centroid data
   centroids = gpd.GeoDataFrame(gdf[["name", "Alliance"]], geometry=gpd.points_from_xy(gdf.LONG, gdf.LAT), crs={"init": "epsg:4326"}) \
     .to_crs(epsg=27700) \
@@ -100,7 +77,7 @@ def load_force_data():
 
   return force_data, centroids
 
-def create_psu_data(forces, centroids, staff_absence):
+def create_psu_data(forces, centroids):
 
   # Assumption (as per netlogo) that each core function has 200 essential officers that can't be deployed elsewhere
 
@@ -108,10 +85,9 @@ def create_psu_data(forces, centroids, staff_absence):
   # taken from non-absent POP-trained officers
 
   # must have at least 200 officers per function (assume dont have to be POP trained)
-  presence = 1-staff_absence/100
   avail = 0
   for i, f in enumerate(CORE_FUNCTIONS):
-    avail += np.minimum(forces[f+"_POP"] * presence, np.maximum(0, forces[f] * presence - CORE_FUNCTIONS_MIN[i]))
+    avail += np.minimum(forces[f+"_POP"], np.maximum(0, forces[f] - CORE_FUNCTIONS_MIN[i]))
 
   forces["available_psus"] = np.floor(avail / PSU_OFFICERS).astype(int)
   forces["dispatched_psus"] = 0
