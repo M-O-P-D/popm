@@ -43,7 +43,7 @@ def run_context():
     # no MPI is not an error
     return 0,1
 
-def collate_and_write_results(config, location_lookup, deployments, allocations, resources):
+def collate_and_write_results(config, location_lookup, deployments, allocations, resources, resources_baseline):
 
   rank, size = run_context()
 
@@ -53,6 +53,7 @@ def collate_and_write_results(config, location_lookup, deployments, allocations,
     deployments.to_csv(config.replace(".json", ".csv"), index=False)
     allocations.to_csv(config.replace(".json", "_allocations.csv"), index=False)
     resources.to_csv(config.replace(".json", "_resources.csv"), index=False)
+    resources_baseline.to_csv(config.replace(".json", "_resources_baseline.csv"), index=False)
   else:
     # root process gets data from all the others and writes it
     from mpi4py import MPI
@@ -67,7 +68,7 @@ def collate_and_write_results(config, location_lookup, deployments, allocations,
       pd.concat(all_deployments).to_csv(config.replace(".json", ".csv"), index=False)
       pd.concat(all_allocations).to_csv(config.replace(".json", "_allocations.csv"), index=False)
       pd.concat(all_resources).to_csv(config.replace(".json", "_resources.csv"), index=False)
-
+      resources_baseline.to_csv(config.replace(".json", "_resources_baseline.csv"), index=False)
 
 def adjust_staffing(unadjusted_force_data, staff_absence, duty_ratio):
   force_data = unadjusted_force_data.copy()

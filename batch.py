@@ -19,7 +19,7 @@ import humanleague as hl
 
 from popm.model import PublicOrderPolicing
 from popm.agents import ForcePSUAgent
-from popm.utils import sample_all_locations, sample_locations_quasi, run_context, collate_and_write_results
+from popm.utils import sample_all_locations, sample_locations_quasi, run_context, collate_and_write_results, adjust_staffing
 from popm.initialisation import load_force_data, PSU_OFFICERS, CORE_FUNCTIONS
 
 def get_name(model, unique_id):
@@ -37,7 +37,7 @@ n_locations = len(routes.index.levels[0])
 force_data, centroids = load_force_data()
 
 
-def run(config, run_no):
+def run(config, run_no, resources_baseline):
 
   model = PublicOrderPolicing(
     config["no_of_events"],
@@ -65,10 +65,12 @@ def run(config, run_no):
   allocations["Requirement"] = config["event_resources"] / PSU_OFFICERS
   allocations.drop(["index", "EventAlliance", "AssignedAlliance"], axis=1, inplace=True)
 
-  force_resources = force_data[force_data.name.isin(allocations["AssignedForce"])][["name", "Alliance", "Officers", "POP"] + [c+"_POP" for c in CORE_FUNCTIONS]]
+  force_resources = resources_baseline[resources_baseline.name.isin(allocations["AssignedForce"])].copy() #force_data[force_data.name.isin(allocations["AssignedForce"])][["name", "Alliance", "Officers", "POP"] + CORE_FUNCTIONS + [c+"_POP" for c in CORE_FUNCTIONS]]
   force_resources["RunId"] = run_no
 
   psus = allocations[["AssignedForce", "PSUs"]].groupby("AssignedForce").sum()
+  other_core_functions = CORE_FUNCTIONS.copy()
+  other_core_functions.remove("public_order")
   for f in force_resources["name"].values:
     assigned_officers = psus.loc[f, "PSUs"] * PSU_OFFICERS
     force_resources.loc[force_resources.name==f, "Officers"] -= assigned_officers
@@ -77,20 +79,22 @@ def run(config, run_no):
     avail = force_resources.loc[force_resources.name==f, "public_order_POP"].values[0]
     if avail < assigned_officers:
       force_resources.loc[force_resources.name==f, "public_order_POP"] = 0
+      force_resources.loc[force_resources.name==f, "public_order"] = 0
       assigned_officers -= avail
     else:
       force_resources.loc[force_resources.name==f, "public_order_POP"] -= assigned_officers
-      break
+      force_resources.loc[force_resources.name==f, "public_order"] -= assigned_officers
+      assigned_officers = 0
 
     # then other areas weighted proportionately
-    # TODO this doesnt take into account
-    other_core_functions = CORE_FUNCTIONS.copy()
-    other_core_functions.remove("public_order")
-    weights = [force_resources.loc[force_resources.name==f, func+"_POP"].values[0] for func in other_core_functions]
-    a = hl.prob2IntFreq(weights/sum(weights), assigned_officers)["freq"]
-
-    for i, func in enumerate(other_core_functions):
-      force_resources.loc[force_resources.name==f, func+"_POP"] -= a[i]
+    if assigned_officers > 0:
+      weights = [force_resources.loc[force_resources.name==f, func+"_POP"].values[0] for func in other_core_functions]
+      if all(w == 0 for w in weights):
+        raise ValueError("need to assign officers from non-POP core functions but none are available")
+      a = hl.prob2IntFreq(weights/sum(weights), assigned_officers)["freq"]
+      for i, func in enumerate(other_core_functions):
+        force_resources.loc[force_resources.name==f, func+"_POP"] -= a[i]
+        force_resources.loc[force_resources.name==f, func] -= a[i]
 
   model.run_model()
 
@@ -157,6 +161,9 @@ if __name__ == "__main__":
     allocations = pd.DataFrame(columns=["RunId", "EventForce", "AssignedForce", "Alliance", "PSUs"])
     resources = pd.DataFrame()
 
+    resources_baseline = adjust_staffing(force_data[["name", "Alliance", "Officers", "POP"] + CORE_FUNCTIONS + [c+"_POP" for c in CORE_FUNCTIONS]],
+      master_config["staff_absence"]/100, master_config["duty_ratio"]/100)
+
     config = master_config.copy()
     # iterate event resource requirement
     for s in master_config["event_resources"]:
@@ -166,14 +173,14 @@ if __name__ == "__main__":
         config["event_start"] = t
         for l in locations:
           config["event_locations"] = l
-          agents, allocs, res = run(config, run_no)
+          agents, allocs, res = run(config, run_no, resources_baseline)
           location_lookup.loc[run_no, "EventLocations"] = "/".join(sorted(allocs.EventForce.unique()))
           deployments = deployments.append(agents, ignore_index=True)
           allocations = allocations.append(allocs, ignore_index=True)
           resources = resources.append(res, ignore_index=True)
           run_no += 1
 
-  collate_and_write_results(args.config, location_lookup, deployments, allocations, resources)
+  collate_and_write_results(args.config, location_lookup, deployments, allocations, resources, resources_baseline)
 
   print("Runtime: %ss" % (time.time() - start_time))
 
