@@ -24,7 +24,7 @@ df = pd.read_csv("./data/force_centroid_routes.zip")
 df["geometry"] = df["geometry"].apply(wkt.loads)
 df["time"] = df["time"] / 3600.0 # convert travel time seconds to hours
 
-force_data, centroids = load_force_data()
+unadjusted_force_data, centroids = load_force_data()
 
 model_params = {
   "no_of_events": UserSettableParameter(
@@ -77,6 +77,15 @@ model_params = {
     1,
     description="The current staff absence rate in percent"
   ),
+  "duty_ratio": UserSettableParameter(
+    "slider",
+    "Staff on duty (%)",
+    50,
+    33,
+    100,
+    1,
+    description="The proportion of officers on duty at any given time"
+  ),
   "timestep": UserSettableParameter(
     "slider",
     "Timestep (minutes)",
@@ -87,9 +96,11 @@ model_params = {
     description="The timestep length in minutes"
   ),
   "routes": gpd.GeoDataFrame(df).set_index(["origin", "destination"]),
-  "force_data": force_data,
+  "unadjusted_force_data": unadjusted_force_data,
   "centroids": centroids
 }
+
+print()
 
 chart_element = CustomChartModule(
   "Event Resourcing",

@@ -7,6 +7,7 @@ from mesa_geo import GeoSpace
 
 from .agents import ForceAreaAgent, ForcePSUAgent, PublicOrderEventAgent
 from .initialisation import load_force_data, create_psu_data, initialise_event_data
+from .utils import adjust_staffing
 from .negotiation import allocate
 from .data_collection import * #get_num_assigned, get_num_deployed, get_num_shortfall, get_num_deficit
 
@@ -16,9 +17,11 @@ class PublicOrderPolicing(Model):
   An agent-based model of resource allocation in response to public order events.
   Source code at https://github.com/M-O-P-D/popm
   """
-  def __init__(self, no_of_events, event_resources, event_start, event_duration, staff_absence, timestep, event_locations, routes, force_data, centroids): #params...
+  def __init__(self, no_of_events, event_resources, event_start, event_duration, staff_absence, duty_ratio, timestep, event_locations, routes, unadjusted_force_data, centroids): #params...
 
     self.log = ["Initialising model"]
+
+    self.force_data = adjust_staffing(unadjusted_force_data, staff_absence/100, duty_ratio/100)
 
     # CustomChartVisualisation needs this to scaled deployed as a % of required (the member var is not used anywhere else)
     # TODO this is bad and is it even correct?
@@ -55,11 +58,11 @@ class PublicOrderPolicing(Model):
     self.centroids = centroids
 
     # create PSU dataset (which appends to force data too, so must do this *before* creating the force agents)
-    psu_data = create_psu_data(force_data, centroids, staff_absence)
+    psu_data = create_psu_data(self.force_data, centroids)
 
     # Set up the force agents
     factory = AgentCreator(ForceAreaAgent, {"model": self}, crs="epsg:27700")
-    force_agents = factory.from_GeoDataFrame(force_data)
+    force_agents = factory.from_GeoDataFrame(self.force_data)
     self.grid.add_agents(force_agents)
     for agent in force_agents:
       self.schedule.add(agent)
@@ -81,9 +84,9 @@ class PublicOrderPolicing(Model):
         raise ValueError("event number (%d) and locations (%s) mismatch" % (no_of_events, event_locations))
       self.event_locations = event_locations
     else:
-      self.event_locations = self.random.sample(list(force_data.index.values), min(no_of_events, len(force_data)))
+      self.event_locations = self.random.sample(list(self.force_data.index.values), min(no_of_events, len(self.force_data)))
 
-    event_data = initialise_event_data(self, event_resources, event_start, event_duration, force_data, centroids)
+    event_data = initialise_event_data(self, event_resources, event_start, event_duration, self.force_data, centroids)
     self.log.append("Events started in %s" % event_data["name"].values)
     factory = AgentCreator(PublicOrderEventAgent, { "model": self}, crs="epsg:27700")
     event_agents = factory.from_GeoDataFrame(event_data)

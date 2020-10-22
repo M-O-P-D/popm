@@ -45,6 +45,7 @@ def run(config, run_no):
     config["event_start"],
     config["event_duration"],
     config["staff_absence"],
+    config["duty_ratio"],
     config["timestep"],
     config["event_locations"],
     routes,
