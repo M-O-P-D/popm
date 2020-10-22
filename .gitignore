@@ -136,4 +136,7 @@ log/
 scenario/
 !scenario/*.json
 
+.DS_store
+
+
 
