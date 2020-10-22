@@ -9,6 +9,8 @@ from shapely.ops import transform
 import shapely.wkt
 import humanleague as hl
 
+from .initialisation import PSU_OFFICERS, CORE_FUNCTIONS, CORE_FUNCTIONS_MIN
+
 
 _bng_proj = pyproj.Proj(init='epsg:27700')
 _lonlat_proj = pyproj.Proj(init='epsg:4326')
@@ -65,6 +67,33 @@ def collate_and_write_results(config, location_lookup, deployments, allocations,
       pd.concat(all_deployments).to_csv(config.replace(".json", ".csv"), index=False)
       pd.concat(all_allocations).to_csv(config.replace(".json", "_allocations.csv"), index=False)
       pd.concat(all_resources).to_csv(config.replace(".json", "_resources.csv"), index=False)
+
+
+def adjust_staffing(unadjusted_force_data, staff_absence, duty_ratio):
+  force_data = unadjusted_force_data.copy()
+  # adjust officer numbers to approximate shift patterns
+  # reduce totals
+  force_data[['Officers', 'POP']] = (force_data[['Officers', 'POP']] * duty_ratio * (1-staff_absence)).astype(int)
+
+  # reduce numbers in each category consistent with the new totals above
+  for i,r in force_data[CORE_FUNCTIONS].iterrows():
+    officers = r.to_numpy()
+    officers = officers / np.sum(officers)
+    officers = hl.prob2IntFreq(officers, force_data.loc[i, "Officers"])["freq"]
+    # couldnt figure out a way to do this without a loop
+    for j,f in enumerate(CORE_FUNCTIONS):
+      force_data.loc[i, f] = officers[j]
+
+  columns = [f + "_POP" for f in CORE_FUNCTIONS]
+  for i,r in force_data[columns].iterrows():
+    officers = r.to_numpy()
+    officers = officers / np.sum(officers)
+    officers = hl.prob2IntFreq(officers, force_data.loc[i, "POP"])["freq"]
+    # couldnt figure out a way to do this without a loop
+    for j,f in enumerate(columns):
+      force_data.loc[i, f] = officers[j]
+
+  return force_data
 
 
 # this will not perform well for n_events > 4
