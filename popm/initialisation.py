@@ -15,8 +15,6 @@ PSU_OFFICERS = 25
 
 CORE_FUNCTIONS = ["emergency", "firearms", "major_incident", "public_order", "serious_crime", "custody"]
 
-CORE_FUNCTIONS_MIN = [80,80,80,0,80,80] # officers retained in each of the above functions
-
 from .utils import npgen, npbitgen
 
 
@@ -64,7 +62,7 @@ def load_force_data():
 
   # extract boundary data
   columns = ['name', 'geometry', 'Officers', 'POP', 'Percentage', 'Alliance', 'population', 'households', 'reserved_psus'] \
-    + CORE_FUNCTIONS + [f + "_POP" for f in CORE_FUNCTIONS]
+    + CORE_FUNCTIONS + [f + "_POP" for f in CORE_FUNCTIONS] + [f + "_MIN" for f in CORE_FUNCTIONS]
   force_data = gpd.GeoDataFrame(gdf[columns])
 
   # extract centroid data
@@ -79,15 +77,13 @@ def load_force_data():
 
 def create_psu_data(forces, centroids):
 
-  # Assumption (as per netlogo) that each core function has 200 essential officers that can't be deployed elsewhere
-
   # 1 PSU = 1 inspector + 3 sergeants + 21 constables
   # taken from non-absent POP-trained officers
 
-  # must have at least 200 officers per function (assume dont have to be POP trained)
+  # Assumption that each core function has a core of essential officers that can't be deployed elsewhere
   avail = 0
-  for i, f in enumerate(CORE_FUNCTIONS):
-    avail += np.minimum(forces[f+"_POP"], np.maximum(0, forces[f] - CORE_FUNCTIONS_MIN[i]))
+  for _, f in enumerate(CORE_FUNCTIONS):
+    avail += np.minimum(forces[f+"_POP"], np.maximum(0, forces[f] - forces[f+"_MIN"]))
 
   forces["available_psus"] = np.floor(avail / PSU_OFFICERS).astype(int)
   forces["dispatched_psus"] = 0

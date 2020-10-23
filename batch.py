@@ -161,7 +161,8 @@ if __name__ == "__main__":
     allocations = pd.DataFrame(columns=["RunId", "EventForce", "AssignedForce", "Alliance", "PSUs"])
     resources = pd.DataFrame()
 
-    resources_baseline = adjust_staffing(force_data[["name", "Alliance", "Officers", "POP"] + CORE_FUNCTIONS + [c+"_POP" for c in CORE_FUNCTIONS]],
+    resources_baseline = adjust_staffing(force_data[["name", "Alliance", "Officers", "POP"] \
+      + CORE_FUNCTIONS + [c+"_POP" for c in CORE_FUNCTIONS] + [c+"_MIN" for c in CORE_FUNCTIONS]],
       master_config["staff_absence"]/100, master_config["duty_ratio"]/100)
 
     config = master_config.copy()
