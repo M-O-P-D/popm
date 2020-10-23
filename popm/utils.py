@@ -9,7 +9,7 @@ from shapely.ops import transform
 import shapely.wkt
 import humanleague as hl
 
-from .initialisation import PSU_OFFICERS, CORE_FUNCTIONS, CORE_FUNCTIONS_MIN
+from .initialisation import PSU_OFFICERS, CORE_FUNCTIONS
 
 
 _bng_proj = pyproj.Proj(init='epsg:27700')
