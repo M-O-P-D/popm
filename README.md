@@ -49,7 +49,7 @@ See the [Dockerfile](./Dockerfile) which runs in server mode.
 e.g.
 
 ```bash
-docker build -t MOPD/popm .
+docker build -t mopd/popm .
 ```
 
 to run on default http port (mapping mesa's default port of 8521 to port 80):

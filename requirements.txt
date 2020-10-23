@@ -18,6 +18,7 @@ distro==1.4.0
 Fiona==1.8.13.post1
 geopandas==0.8.1
 html5lib==1.0.1
+humanleague==2.1.1
 idna==2.10
 ipaddr==2.2.0
 Jinja2==2.11.2
