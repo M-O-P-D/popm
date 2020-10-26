@@ -1,6 +1,6 @@
 #!/bin/bash
 
-qsub batch.sh 1event
+qsub batch.sh 1events
 qsub mpi_batch.sh 2events
 qsub mpi_batch.sh 3events
 qsub mpi_batch.sh 4events
