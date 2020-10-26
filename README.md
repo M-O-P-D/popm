@@ -4,7 +4,7 @@
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/220e164b605d4dd98771a5ab7e9281d1)](https://www.codacy.com?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=M-O-P-D/popm&amp;utm_campaign=Badge_Grade)
 ![status](https://img.shields.io/badge/dev%20status-work%20in%20progress-red)
 
-![screenshot](./doc/screenshot.png)
+![screenshot](./doc/screenshot2.png)
 
 ## Status
 
