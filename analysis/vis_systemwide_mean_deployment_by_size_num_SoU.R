@@ -9,7 +9,6 @@ library(directlabels)
 
 #REMEMBER TO SET YOUR WORKING DIRECTORY 
 root_path_results <- ""
-
 setwd(root_path_results)
 
 #USER PARAM
@@ -28,7 +27,7 @@ for(num_events in 1:n_events)
 {
 
   #Load data 
-  setwd(paste0("/", num_events, "events"))
+  setwd(paste0(num_events, "events"))
   raw <- read_csv(paste0(num_events,"events.csv"))
   raw$Event <- as_factor(raw$Event)
   
