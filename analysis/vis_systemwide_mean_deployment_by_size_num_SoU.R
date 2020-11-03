@@ -8,7 +8,7 @@ library(ggforce)
 library(directlabels)
 
 #REMEMBER TO SET YOUR WORKING DIRECTORY 
-root_path_results <- ""
+root_path_results <- getwd()
 setwd(root_path_results)
 
 #USER PARAM
@@ -27,7 +27,7 @@ for(num_events in 1:n_events)
 {
 
   #Load data 
-  setwd(paste0(num_events, "events"))
+  etwd(paste0(root_path_results, "/", num_events, "events"))
   raw <- read_csv(paste0(num_events,"events.csv"))
   raw$Event <- as_factor(raw$Event)
   
