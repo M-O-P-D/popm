@@ -1,21 +1,21 @@
 #Looking at average deployment performance by event area  
 #------------------------------------------------------------------
-
-library(dplyr)
-library(ggplot2)
-library(readr)
 library(tidyverse)
 library(gridExtra)
-library(reshape2)
 library(rstudioapi)  
+
+#REMEMBER TO SET YOUR WORKING DIRECTORY 
+root_path_results <- getwd()
+setwd(root_path_results)
 
 #USER PARAM
 n_events <- 10
+shift_allocation <- 100
 
 for(num_events in 1:n_events) 
 {
   #Load data 
-  setwd(paste0("../", num_events, " Events"))
+  setwd(paste0(root_path_results, "/", num_events, "events"))
   
   df <- read_csv(paste0(num_events,"events.csv"))
   df$Event <- as_factor(df$Event)
@@ -34,15 +34,15 @@ for(num_events in 1:n_events)
   {
     if(event_size == "large") 
     {df <- large_immediate_start 
-    print("Visualising Large Event")
+    print(paste0("Visualising ", num_events, " Large Events"))
     psu_count <- 200}
     if(event_size == "medium") 
     {df <- medium_immediate_start
-    print("Visualising Medium Event")
+    print(paste0("Visualising ", num_events, "Medium Events"))
     psu_count <- 80}
     if(event_size == "small") 
     {df <- small_immediate_start
-    print("Visualising Small Event")
+    print(paste0("Visualising ", num_events, " Small Events"))
     psu_count <- 20}
     
     #make event location a factor 
@@ -50,7 +50,7 @@ for(num_events in 1:n_events)
     #count how many levels it has - this is how many simulations have been run 
     simulation_count <- length(levels(df$EventLocations))
     
-    #drop irrelavant vars
+    #drop irrelevant vars
     tmp <- df[,c(3,2,7)] 
     tmp
     
@@ -127,42 +127,3 @@ for(num_events in 1:n_events)
 }
 
 
-# SIMPLE BAR CHART IMPLEMENTATION
-# p1 <- ggplot(data=df_average_deployment_1, aes(x=Event, y=value_mean_DeployedPct, fill=Time)) +
-#   geom_bar(stat="identity", position=position_dodge()) +
-#   theme(axis.text.x=element_text(angle=45,hjust=1)) +
-#   geom_hline(yintercept=10, linetype="dashed", color = "blue") +
-#   geom_hline(yintercept=40, linetype="dashed", color = "blue") +
-#   geom_hline(yintercept=60, linetype="dashed", color = "blue") +
-#   labs(title = "Average deployment % by Event Location by 1,4,8 hour Mobilisation Targets",
-#        subtitle = paste("Simulating",num_events,event_size, "sized simultaneous seats -",psu_count,"PSUs each - ALL COMBINATIONS of" ,num_events, "seats -", simulation_count , "simulations"),
-#        y = "Mean % Deployed")  +
-#   theme(axis.title.x=element_blank())
-# 
-# p2 <- ggplot(data=df_average_deployment_2, aes(x=Event, y=value_mean_DeployedPct, fill=Time)) +
-#   geom_bar(stat="identity", position=position_dodge()) +
-#   theme(axis.text.x=element_text(angle=45,hjust=1)) +
-#   geom_hline(yintercept=10, linetype="dashed", color = "blue") +
-#   geom_hline(yintercept=40, linetype="dashed", color = "blue") +
-#   geom_hline(yintercept=60, linetype="dashed", color = "blue") +
-#   labs(y = "Mean % Deployed")  +
-#   theme(axis.title.x=element_blank())
-# 
-# p3 <- ggplot(data=df_average_deployment_3, aes(x=Event, y=value_mean_DeployedPct, fill=Time)) +
-#   geom_bar(stat="identity", position=position_dodge()) +
-#   theme(axis.text.x=element_text(angle=45,hjust=1)) +
-#   geom_hline(yintercept=10, linetype="dashed", color = "blue") +
-#   geom_hline(yintercept=40, linetype="dashed", color = "blue") +
-#   geom_hline(yintercept=60, linetype="dashed", color = "blue") +
-#   labs(y = "Mean % Deployed")  +
-#   theme(axis.title.x=element_blank()) +
-#   labs(caption = "(based on data from ...)")
-# 
-# #and put them togther 
-# 
-# 
-# grid.arrange(p1,p2,p3)
-# 
-# pdf(paste0("Average_deployment_",num_events,"_", event_size, "_events.pdf"), height = 11, width = 11)
-# grid.arrange(p1,p2,p3)
-# dev.off()
