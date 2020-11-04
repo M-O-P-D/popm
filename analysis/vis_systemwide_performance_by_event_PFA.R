@@ -50,14 +50,18 @@ for(num_events in 1:n_events)
   }
 }
 
-p1 <- ggplot(results, aes(x=factor(num_events), y=AllocatedPct, fill=factor(event_size))) + 
+#create multipage pdf
+pdf(paste0("../AggregateOut/Boxplots_by_PFA_size_number_events.pdf"), height = 11, width = 18)
+
+for (i in 1:5){
+print(ggplot(results, aes(x=factor(num_events), y=AllocatedPct, fill=factor(event_size))) + 
   geom_boxplot(outlier.shape = NA) +
   labs(title = paste("Allocation Trends by size and number of seats-of-unrest scenarios"),
        subtitle = "Boxplots represent % of Required Allocation at each simulated event in police force area. 1 to 3 events all combinations 4+ Events - sample of 10000 combinations .",
        y = "% of Required Allocation at Event", x = "Number of simultaneous events") +
-  facet_wrap(~Event)
-
-
-pdf(paste0("../AggregateOut/XBoxplots_by_PFA_size_number_events.pdf"), height = 11, width = 18)
-p1
+  facet_wrap_paginate(~Event, ncol = 3, nrow = 3, page = i))
+}
 dev.off()
+
+p1
+
