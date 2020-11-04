@@ -127,9 +127,12 @@ head(results)
 results$EventSize <- as_factor(results$EventSize)
 
 
-#Now Plot Results 
+#Now Plot Results in pagniated facet wrap  
 
-p2 <- ggplot(data = results, aes(x=NumEvents, y=mean)) +
+pdf(paste0("../AggregateOut/Mean_Allocation_by_size_number_events_facet_PFA.pdf"), height = 11, width = 18)
+
+for (i in 1:5) {
+print(ggplot(data = results, aes(x=NumEvents, y=mean)) +
   geom_line(aes(color = EventSize), size = 1.5) + 
   ylim(0, 100) +
   xlim(1, 10) +
@@ -138,32 +141,56 @@ p2 <- ggplot(data = results, aes(x=NumEvents, y=mean)) +
        subtitle = "Coloured Lines: Mean % of required resources allocated at event across all simulations.",
        y = "Mean % allocation at each seat of unrest across all simulations", x = "Number of simultaneous events",
        caption = "For scenarios with 1,2 & 3 events all unique combinations of events are simulated\nFor scenarios with 4 or more events a sample of 10,000 unique combinations is simulated") +
-  facet_wrap(~Event)  
+  facet_wrap_paginate(~Event, ncol = 3, nrow = 3, page = i))
+}
+dev.off() 
 
-
-pdf(paste0("../AggregateOut/Mean_Allocation_by_size_number_events_facet_PFA.pdf"), height = 6, width = 11)
-p2
-dev.off()
 
 
 
 
 #subset just results for large SoU and graph all PFAs on one figure
 results_large <- filter(results, EventSize == "large")
+results_medium <- filter(results, EventSize == "medium")
+results_small <- filter(results, EventSize == "small")
 
-p3 <- ggplot(data = results_large, aes(x=NumEvents, y=mean)) +
+
+pdf(paste0("../AggregateOut/Mean_Allocation_by_size_number_events_combined_PFA"), height = 6, width = 11)
+
+print(ggplot(data = results_large, aes(x=NumEvents, y=mean)) +
   geom_line(aes(color = Event), size = 1.5) + 
   ylim(0, 100) +
   xlim(1, 10) +
   scale_x_continuous(breaks=c(1:10)) +
-  labs(title = paste0("Allocation Trends by size and number of seats-of-unrest scenarios - ", shift_allocation, "% Shift Configuration"),
+  labs(title = paste0("Allocation Trends - Large seats-of-unrest scenarios - ", shift_allocation, "% Shift Configuration"),
        subtitle = "Coloured Lines: Mean % of required resources allocated at event across all simulations.",
        y = "Mean % allocation at each seat of unrest across all simulations", x = "Number of simultaneous events",
-       caption = "For scenarios with 1,2 & 3 events all unique combinations of events are simulated\nFor scenarios with 4 or more events a sample of 10,000 unique combinations is simulated")
+       caption = "For scenarios with 1,2 & 3 events all unique combinations of events are simulated\nFor scenarios with 4 or more events a sample of 10,000 unique combinations is simulated"))
 
 
-pdf(paste0("../Mean_Allocation_Large_events_by_PFA.pdf"), height = 6, width = 11)
-p3
+print(ggplot(data = results_medium, aes(x=NumEvents, y=mean)) +
+        geom_line(aes(color = Event), size = 1.5) + 
+        ylim(0, 100) +
+        xlim(1, 10) +
+        scale_x_continuous(breaks=c(1:10)) +
+        labs(title = paste0("Allocation Trends - Medium seats-of-unrest scenarios - ", shift_allocation, "% Shift Configuration"),
+             subtitle = "Coloured Lines: Mean % of required resources allocated at event across all simulations.",
+             y = "Mean % allocation at each seat of unrest across all simulations", x = "Number of simultaneous events",
+             caption = "For scenarios with 1,2 & 3 events all unique combinations of events are simulated\nFor scenarios with 4 or more events a sample of 10,000 unique combinations is simulated"))
+
+
+print(ggplot(data = results_small, aes(x=NumEvents, y=mean)) +
+        geom_line(aes(color = Event), size = 1.5) + 
+        ylim(0, 100) +
+        xlim(1, 10) +
+        scale_x_continuous(breaks=c(1:10)) +
+        labs(title = paste0("Allocation Trends - Small seats-of-unrest scenarios - ", shift_allocation, "% Shift Configuration"),
+             subtitle = "Coloured Lines: Mean % of required resources allocated at event across all simulations.",
+             y = "Mean % allocation at each seat of unrest across all simulations", x = "Number of simultaneous events",
+             caption = "For scenarios with 1,2 & 3 events all unique combinations of events are simulated\nFor scenarios with 4 or more events a sample of 10,000 unique combinations is simulated"))
+
+
+
 dev.off()
 
 #write out main results
