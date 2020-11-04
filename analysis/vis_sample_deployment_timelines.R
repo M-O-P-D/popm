@@ -1,18 +1,19 @@
-library(dplyr)
-library(ggplot2)
-library(readr)
 library(tidyverse)
 library(gridExtra)
-library(reshape2)
 library(rstudioapi)  
+
+#REMEMBER TO SET YOUR WORKING DIRECTORY 
+root_path_results <- getwd()
+setwd(root_path_results)
 
 #USER PARAM
 n_events <- 10
+shift_allocation <- 100
 
 for(num_events in 1:n_events) 
 {
   #Load data 
-  setwd(paste0("../", num_events, " Events"))
+  setwd(paste0(root_path_results, "/", num_events, "events"))
   
   df <- read_csv(paste0(num_events,"events.csv"))
   df$Event <- as_factor(df$Event)
