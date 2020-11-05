@@ -2,16 +2,17 @@
 #Look at overall performance 
 #- i.e. plot number of events, and percentage of scenarios fully resourced - facet by event size
 #------------------------------------------------------------------
-library(dplyr)
-library(ggplot2)
-library(readr)
 library(tidyverse)
 library(gridExtra)
-library(reshape2)
-library(rstudioapi)  
+
+
+#REMEMBER TO SET YOUR WORKING DIRECTORY 
+root_path_results <- getwd()
+setwd(root_path_results)
 
 #USER PARAM
 n_events <- 10
+shift_allocation <- 100
 
 #create an empty DF to store results 
 results <- data.frame(EventSize=factor(), 
@@ -23,7 +24,7 @@ for(num_events in 1:n_events)
 {
 
   #Load data 
-  setwd(paste0("../", num_events, " Events"))
+  setwd(paste0(root_path_results, "/", num_events, "events"))
   raw <- read_csv(paste0(num_events,"events.csv"))
   raw$Event <- as_factor(raw$Event)
   
@@ -62,9 +63,9 @@ p1 <- ggplot(data = results, aes(x=NumEvents, y=SuccessPct)) +
   labs(title = paste("Overall efficiency by size and number of seats-of-unrest scenarios"),
        subtitle = "Coloured Lines: % of simulation runs in which all events were successfully resourced.",
        y = "% of simulations fully resourced", x = "Number of simultaneous events",
-       caption = paste("\n\nGenerating Script:", print(rstudioapi::getActiveDocumentContext()$path))) +
+       caption = paste("\n\nGenerating Script:")) +
   annotate("text", x = 5.5, y = 15, label = "For scenarios with 1,2 & 3 events all unique combinations of events are simulated.\nFor scenarios with 4 or more events a sample of 10,000 unique combinations is simulated")
 
-pdf(paste0("../XOverall_efficiency_by_size_number_events.pdf"), height = 11, width = 11)
+pdf(paste0("../AggregateOut/Overall_efficiency_by_size_number_events.pdf"), height = 11, width = 11)
 p1
 dev.off()

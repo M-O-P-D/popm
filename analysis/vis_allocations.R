@@ -1,23 +1,29 @@
+#NEED FIX
+
+
 #----------------------------------------------------------------------------------------------------------------------
 #Look at how resources are distributed 
 #----------------------------------------------------------------------------------------------------------------------
-library(dplyr)
-library(ggplot2)
-library(readr)
 library(tidyverse)
 library(gridExtra)
-library(reshape2)
 library(rstudioapi)  
 library(ggforce)
 
 
-n_events <- 10
+#REMEMBER TO SET YOUR WORKING DIRECTORY 
+root_path_results <- ""
+setwd(root_path_results)
 
+#USER PARAM
+n_events <- 10
+shift_allocation <- 100
+
+#Step through all model conditions - numbers of SoU
 for(num_events in 1:n_events) 
 {
 
   #Load data 
-  setwd(paste0("../", num_events, " Events"))
+  setwd(paste0(num_events, "events"))
   df <- read_csv(paste0(num_events,"events_allocations.csv"))
   head(df)
   df <- df[,c('EventForce','AssignedForce', 'PSUs','Requirement')]
@@ -25,6 +31,7 @@ for(num_events in 1:n_events)
   
   head(df)
   
+  #Step through all model conditions - size of SoU
   for(event_size in c("small","medium","large"))
   {
     #large events 
@@ -67,9 +74,8 @@ for(num_events in 1:n_events)
         labs(title = paste("Who gets what from where?"),
              subtitle = paste("Analsyses of PSU providers by Event Location - " , event_size, "x", num_events, " SoU Scenarios"),
              y = "Mean proportion of PSUs sent to events",
-             x = "Provider of Resource",
-             caption = paste("\n\nGenerating Script:", print(rstudioapi::getActiveDocumentContext()$path))) +
-        facet_wrap_paginate(~EventForce, ncol = 2, nrow = 2, page = i)
+             x = "Provider of Resource") +
+        facet_wrap_paginate(~EventForce, ncol = 3, nrow = 3, page = i)
       
       ggsave(file = paste0("../Who_gets_what_from_where_", event_size, "x", num_events, "SoU_p", i, ".pdf"), height = 6, width = 11)
     }  
