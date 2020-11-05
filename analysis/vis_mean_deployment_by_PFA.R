@@ -12,8 +12,13 @@ setwd(root_path_results)
 n_events <- 10
 shift_allocation <- 100
 
-for(num_events in 1:n_events) 
+
+pdf(paste0("AggregateOut/Mean_SD_deployment_by_events.pdf"), height = 11, width = 11)
+
+for(event_size in c("small","medium","large")) 
 {
+  for(num_events in 1:n_events) 
+  {
   #Load data 
   setwd(paste0(root_path_results, "/", num_events, "events"))
   
@@ -26,22 +31,16 @@ for(num_events in 1:n_events)
   df <- merge(df, dflookup, by = "RunId")
   head(df)
   
-  small_immediate_start <- filter(df, EventStart == 0 & Required == 500)
-  medium_immediate_start <- filter(df, EventStart == 0 & Required == 2000)
-  large_immediate_start <- filter(df, EventStart == 0 & Required == 5000)  
-  
-  for(event_size in c("small","medium","large")) 
-  {
     if(event_size == "large") 
-    {df <- large_immediate_start 
+    {df <- filter(df, EventStart == 0 & Required == 5000)  
     print(paste0("Visualising ", num_events, " Large Events"))
     psu_count <- 200}
     if(event_size == "medium") 
-    {df <- medium_immediate_start
+    {df <- filter(df, EventStart == 0 & Required == 2000)
     print(paste0("Visualising ", num_events, "Medium Events"))
     psu_count <- 80}
     if(event_size == "small") 
-    {df <- small_immediate_start
+    {df <- filter(df, EventStart == 0 & Required == 500)
     print(paste0("Visualising ", num_events, " Small Events"))
     psu_count <- 20}
     
@@ -70,20 +69,26 @@ for(num_events in 1:n_events)
         sd = sd(value))
     
     
-    #MMake Time a factor for ease of plotting clustered bar charts 
+    #Make Time a factor for ease of plotting clustered bar charts 
     df_average_deployment$Time <- as_factor(df_average_deployment$Time)
     
+    #ensure Event levels for df_average_deployment$Event are in alphabetical order and then order by Event- for consistency in plotting order
+    df_average_deployment$Event <- factor(as.character(df_average_deployment$Event))
+    df_average_deployment <- df_average_deployment %>% arrange(Event)
+      
+    
     #Divide the data up for grid of plots (HACKY)
-    df_average_deployment_1 <- df_average_deployment[1:42,]
-    df_average_deployment_2 <- df_average_deployment[43:81,]
-    df_average_deployment_3 <- df_average_deployment[82:120,]
+    df_average_deployment_1 <- df_average_deployment[1:42,] 
+    df_average_deployment_2 <- df_average_deployment[43:81,] 
+    df_average_deployment_3 <- df_average_deployment[82:120,] 
     
     
     #Now make three plots - clustered bar charts with error bars
     #---------------------------------------------------------------------------------------------------------------
     
-    p1 <- ggplot(data=df_average_deployment_1, aes(x=Event, y=mean, fill=Time)) +
+    p1 <- ggplot(data=df_average_deployment_1, aes(x=Event , y=mean, fill=Time)) +
       geom_bar(stat="identity", position=position_dodge()) +
+      ylim(0, 120) +
       geom_errorbar(aes(ymin=mean-sd, ymax=mean+sd), width=.2,position=position_dodge(.9)) +
       theme(axis.text.x=element_text(angle=45,hjust=1)) +
       geom_hline(yintercept=10, linetype="dashed", color = "blue") +
@@ -95,8 +100,9 @@ for(num_events in 1:n_events)
            y = "Mean % Deployed")  +
       theme(axis.title.x=element_blank())
     
-    p2 <- ggplot(data=df_average_deployment_2, aes(x=Event, y=mean, fill=Time)) +
+    p2 <- ggplot(data=df_average_deployment_2, aes(x=Event , y=mean, fill=Time)) +
       geom_bar(stat="identity", position=position_dodge()) +
+      ylim(0, 120) +
       geom_errorbar(aes(ymin=mean-sd, ymax=mean+sd), width=.2,position=position_dodge(.9)) +
       theme(axis.text.x=element_text(angle=45,hjust=1)) +
       geom_hline(yintercept=10, linetype="dashed", color = "blue") +
@@ -106,8 +112,9 @@ for(num_events in 1:n_events)
       labs(y = "Mean % Deployed")  +
       theme(axis.title.x=element_blank())
     
-    p3 <- ggplot(data=df_average_deployment_3, aes(x=Event, y=mean, fill=Time)) +
+    p3 <- ggplot(data=df_average_deployment_3, aes(x=Event , y=mean, fill=Time)) +
       geom_bar(stat="identity", position=position_dodge()) +
+      ylim(0, 120) +
       geom_errorbar(aes(ymin=mean-sd, ymax=mean+sd), width=.2,position=position_dodge(.9)) +
       theme(axis.text.x=element_text(angle=45,hjust=1)) +
       geom_hline(yintercept=10, linetype="dashed", color = "blue") +
@@ -118,12 +125,9 @@ for(num_events in 1:n_events)
       theme(axis.title.x=element_blank()) +
       labs(caption = "(based on data from ...)")
     
+    print(grid.arrange(p1,p2,p3))
     
-    #grid.arrange(p1,p2,p3)
-    pdf(paste0("Mean_SD_deployment_",num_events,"_", event_size, "_events.pdf"), height = 11, width = 11)
-    grid.arrange(p1,p2,p3)
-    dev.off()
   }
 }
-
+dev.off()
 

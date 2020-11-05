@@ -27,7 +27,7 @@ for(num_events in 1:n_events)
 {
 
   #Load data 
-  etwd(paste0(root_path_results, "/", num_events, "events"))
+  setwd(paste0(root_path_results, "/", num_events, "events"))
   raw <- read_csv(paste0(num_events,"events.csv"))
   raw$Event <- as_factor(raw$Event)
   
@@ -155,7 +155,7 @@ results_medium <- filter(results, EventSize == "medium")
 results_small <- filter(results, EventSize == "small")
 
 
-pdf(paste0("../AggregateOut/Mean_Allocation_by_size_number_events_combined_PFA"), height = 6, width = 11)
+pdf(paste0("../AggregateOut/Mean_Allocation_by_size_number_events_combined_PFA.pdf"), height = 6, width = 11)
 
 print(ggplot(data = results_large, aes(x=NumEvents, y=mean)) +
   geom_line(aes(color = Event), size = 1.5) + 
