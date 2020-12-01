@@ -17,7 +17,7 @@ from shapely import wkt
 
 import humanleague as hl
 
-from popm.model import PublicOrderPolicing
+from popm.mesa_model import PublicOrderPolicing
 from popm.agents import ForcePSUAgent
 from popm.utils import sample_all_locations, sample_locations_quasi, run_context, collate_and_write_results, adjust_staffing
 from popm.initialisation import load_force_data, PSU_OFFICERS, CORE_FUNCTIONS

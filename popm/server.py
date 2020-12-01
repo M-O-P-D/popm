@@ -15,7 +15,7 @@ from .visualization.LogElement import LogElement
 from .visualization.CustomChartVisualization import CustomChartModule
 
 from .portrayal import portray_map
-from .model import PublicOrderPolicing
+from .mesa_model import PublicOrderPolicing
 from .initialisation import load_force_data
 
 
