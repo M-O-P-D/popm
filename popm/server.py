@@ -100,8 +100,6 @@ model_params = {
   "centroids": centroids
 }
 
-print()
-
 chart_element = CustomChartModule(
   "Event Resourcing",
   "Timestep",
