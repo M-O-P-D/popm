@@ -34,17 +34,14 @@ def load_force_data():
     .set_index("code", drop=True) \
     .to_crs(epsg=27700)
 
-  # Merge: W.Midlands+W.Mercia and Beds+Cambs+Beds+Herts
-  gdf.at["E23000014", "geometry"] = cascaded_union([gdf.at["E23000014", "geometry"], gdf.at["E23000016", "geometry"]])
+  # Merge Beds/Cambs/Herts (only)
   gdf.at["E23000026", "geometry"] = cascaded_union([gdf.at["E23000023", "geometry"], gdf.at["E23000026", "geometry"], gdf.at["E23000027", "geometry"]])
-  gdf.drop(["E23000016", "E23000023", "E23000027"], inplace=True)
-  gdf.at["E23000014", "name"] = "W Midlands W Mercia"
+  gdf.drop(["E23000023", "E23000027"], inplace=True)
   gdf.at["E23000026", "name"] = "Beds Cambs Herts"
 
   data = pd.read_csv(force_data_file) \
     .replace({"Metropolitan": "Metropolitan Police",
-              "Bedfordshire": "Beds Cambs Herts",
-              "West Midlands": "W Midlands W Mercia"}) \
+              "Bedfordshire": "Beds Cambs Herts"}) \
     .rename({"Force": "name"}, axis=1)
   # POP = Public Order (trained) Police
 

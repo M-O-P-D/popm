@@ -3,12 +3,13 @@
 
 import os
 import requests
+from time import sleep
 from dotenv import load_dotenv, find_dotenv
 from geopandas import gpd
 from shapely.geometry import LineString
 
-from popm.initialisation import load_data
-from popm.utils import bng2lonlat, deserialise_geometry
+from popm.initialisation import load_force_data
+from popm.utils import bng2lonlat
 
 # API key should be in .env
 load_dotenv(find_dotenv())
@@ -41,40 +42,41 @@ def get_route(start_ll, end_ll):
   route = result["paths"][0]["points"]["coordinates"]
   time = result["paths"][0]["time"]/1000.0
 
-  # s = [lonlat2bng(shapely.geometry.Point(p[1], p[0])) for p in points]
-
-  # x = [p.x for p in s]
-  # y = [p.y for p in s]
-
   return time, route
 
 
-force_data, _, _ = load_data()
+_, centroids = load_force_data()
 
 #force_data = force_data.head(3)
 
-nforces = len(force_data)
+nforces = len(centroids)
+#nroutes = nforces * (nforces-1) # all routes
+nroutes = 2 * (nforces-1) # to/from one centroid
 
-routes = gpd.GeoDataFrame(index=range(nforces*(nforces-1)), columns=["origin", "destination", "geometry"])
+routes = gpd.GeoDataFrame(index=range(nroutes), columns=["origin", "destination", "geometry"])
 
+centroids.geometry = centroids.geometry.apply(bng2lonlat)
+print(centroids.head())
 
 idx = 0
-for i, r in force_data.iterrows():
-  for j, s in force_data.iterrows():
-    if r.name != s.name:
-      routes.loc[idx, "origin"] = r["name"]
-      routes.loc[idx, "destination"] = s["name"]
+for i, r in centroids.iterrows():
+  for j, s in centroids.iterrows():
+    if i != j and (i == "West Mercia" or j == "West Mercia"):
+      print("%s -> %s" % (i,j))
+      routes.loc[idx, "origin"] = i
+      routes.loc[idx, "destination"] = j
 
-      origin = bng2lonlat(deserialise_geometry(r["centroid"]))
-      destination = bng2lonlat(deserialise_geometry(s["centroid"]))
+      origin = r["geometry"]
+      destination = s["geometry"]
 
       time, route = get_route(origin, destination)
 
       routes.loc[idx, "time"] = time
       routes.loc[idx, "geometry"] = LineString(route)
 
+      sleep(5)
       idx += 1
 
 print(routes.head())
 
-routes.to_csv("data/force_centroid_routes.csv", index=False)
+routes.to_csv("data/force_centroid_routes_add.csv", index=False)
