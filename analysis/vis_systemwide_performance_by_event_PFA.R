@@ -13,6 +13,10 @@ setwd(root_path_results)
 #USER PARAM
 n_events <- 10
 shift_allocation <- 100
+large_event_PSUs <- 99
+medium_event_PSUs <- 35
+small_event_PSUs <- 15
+
 
 results <- data.frame(Event=factor(),
                        AllocatedPct=double(),
@@ -36,9 +40,9 @@ for(num_events in 1:n_events)
     print(paste("Generating outcomes for", num_events, event_size, "events" ))
     
     #Subset data based on Param - pull only immediate events of right size - only extract allocation at hour 23
-    if(event_size == "small") {df <- filter(raw, EventStart == 0 & Time == 23 & Required == 500)}
-    if(event_size == "medium") {df <- filter(raw, EventStart == 0 & Time == 23 & Required == 2000)}
-    if(event_size == "large") {df <- filter(raw, EventStart == 0 & Time == 23 & Required == 5000)}
+    if(event_size == "small") {df <- filter(raw, EventStart == 0 & Time == 23 & Required == (small_event_PSUs * 25))}
+    if(event_size == "medium") {df <- filter(raw, EventStart == 0 & Time == 23 & Required == (medium_event_PSUs * 25))}
+    if(event_size == "large") {df <- filter(raw, EventStart == 0 & Time == 23 & Required == (large_event_PSUs * 25))}
     
     #drop everything apart from RunId and AllocatedPCT
     df <- df[,c('Event','AllocatedPct')]
