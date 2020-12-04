@@ -12,7 +12,7 @@ root_path_results <- getwd()
 setwd(root_path_results)
 
 #USER PARAM
-n_events <- 10
+n_events <- 3
 shift_allocation <- 100
 large_event_PSUs <- 99
 medium_event_PSUs <- 35
@@ -95,7 +95,7 @@ for(num_events in 1:n_events)
 {
   
   #Load data 
-  setwd(paste0("~/Dropbox/#AssProf/$Turing/DEMAND MODELLING/PROJECT 3/Public Order Model/popm-out/Input/100% Shift/", num_events, "events"))
+  setwd(paste0(root_path_results, "/", num_events, "events"))
   raw <- read_csv(paste0(num_events,"events.csv"))
   raw$Event <- as_factor(raw$Event)
   
@@ -106,9 +106,9 @@ for(num_events in 1:n_events)
     print(paste("Generating outcomes for", num_events, event_size, "events" ))
     
     #Sbset data based on Param - pull only immediate events of right size - only extract allocation at hour 23
-    if(event_size == "small") {df <- filter(raw, EventStart == 0 & Time == 23 & Required == 500)}
-    if(event_size == "medium") {df <- filter(raw, EventStart == 0 & Time == 23 & Required == 2000)}
-    if(event_size == "large") {df <- filter(raw, EventStart == 0 & Time == 23 & Required == 5000)}
+    if(event_size == "small") {df <- filter(raw, EventStart == 0 & Time == 23 & (small_event_PSUs * 25))}
+    if(event_size == "medium") {df <- filter(raw, EventStart == 0 & Time == 23 & (medium_event_PSUs * 25))}
+    if(event_size == "large") {df <- filter(raw, EventStart == 0 & Time == 23 & (large_event_PSUs * 25))}
     
     #drop everything apart from RunId, Event and AllocatedPCT
     df <- df[,c('RunId','Event','AllocatedPct')]

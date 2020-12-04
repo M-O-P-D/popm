@@ -20,8 +20,8 @@ medium_event_PSUs <- 35
 small_event_PSUs <- 15
 
 
-num_events <- 3
-event_size <- "medium"
+#num_events <- 3
+#event_size <- "medium"
 
 #Step through all model conditions - numbers of SoU
 pdf(paste0("AggregateOut/Who-gets-what-from-where.pdf"), height = 12, width = 8)
@@ -79,7 +79,7 @@ for(num_events in 1:n_events)
       geom_bar(stat="identity") + 
       theme(axis.text.x=element_text(angle=45,hjust=1, size=6)) +
       labs(title = paste(""),
-           subtitle = paste("Analsyses of" , num_events , "x" ,event_size, "SoU Scenarios"),
+           subtitle = paste("Providers accross all simulations - Analsyses of" , num_events , "x" ,event_size, "SoU Scenarios"),
            y = "% of resource provided") +
     facet_wrap_paginate(~EventForce, ncol = 1, nrow =8, page = i))
     }
