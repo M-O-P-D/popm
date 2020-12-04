@@ -15,7 +15,7 @@ from .visualization.LogElement import LogElement
 from .visualization.CustomChartVisualization import CustomChartModule
 
 from .portrayal import portray_map
-from .model import PublicOrderPolicing
+from .mesa_model import PublicOrderPolicing
 from .initialisation import load_force_data
 
 
@@ -43,11 +43,11 @@ model_params = {
   ),
   "event_resources": UserSettableParameter(
     "slider",
-    "No. of officers required at each event",
-    1000,
-    0,
-    5000,
-    10,
+    "No. of officers required at each event", # Small=15 PSUs, Medium=35 PSUs, Large=99 PSUs
+    99*25,
+    15*25,
+    99*25,
+    25,
     description="No. of officers required at each event"
   ),
   "event_start": UserSettableParameter(
@@ -80,7 +80,7 @@ model_params = {
   "duty_ratio": UserSettableParameter(
     "slider",
     "Staff on duty (%)",
-    50,
+    100,
     33,
     100,
     1,
@@ -99,8 +99,6 @@ model_params = {
   "unadjusted_force_data": unadjusted_force_data,
   "centroids": centroids
 }
-
-print()
 
 chart_element = CustomChartModule(
   "Event Resourcing",

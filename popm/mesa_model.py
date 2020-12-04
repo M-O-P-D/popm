@@ -77,7 +77,7 @@ class PublicOrderPolicing(Model):
     # then the public order event data and agents
     # for fixed events
     if isinstance(event_locations, str) and event_locations == "Breaking Point":
-      self.event_locations = [0, 4, 13]
+      self.event_locations = list(self.force_data.name[self.force_data.name.isin(["Metropolitan Police", "Greater Manchester", "West Midlands"])].index)
     # otherwise random (with or without fixed seed, see above)
     elif isinstance(event_locations, (tuple, list, np.ndarray)):
       if len(event_locations) != no_of_events:

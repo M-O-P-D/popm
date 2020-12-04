@@ -103,7 +103,10 @@ class ForcePSUAgent(GeoAgent):
     # case 2: assigned and dispatched, i.e. en route to event
     if self.assigned and self.dispatched and not self.deployed:
 
-      time = self.model.routes.loc[self.name, self.assigned_to]["time"]
+      if self.name == self.assigned_to:
+        time = 0.0
+      else:
+        time = self.model.routes.loc[self.name, self.assigned_to]["time"]
 
       # if we arrive at event, update agents
       if self.model.time() >= ForcePSUAgent.MOBILISATION_TIME + time: # TODO offset w.r.t event start
@@ -137,8 +140,12 @@ class ForcePSUAgent(GeoAgent):
     # otherwise, arriving home, find the associated force and make available again
     if not self.assigned and self.dispatched:
 
-      time = self.model.routes.loc[self.assigned_to, self.name]["time"]
-      route = self.model.routes.loc[self.assigned_to, self.name]["geometry"]
+      if self.assigned_to == self.name:
+        time = 0.0
+        route = None
+      else:
+        time = self.model.routes.loc[self.assigned_to, self.name]["time"]
+        route = self.model.routes.loc[self.assigned_to, self.name]["geometry"]
       e = self.__get_event_agent()
 
       if self.dispatched and time + e.time_to_end < 0:

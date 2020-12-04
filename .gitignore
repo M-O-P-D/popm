@@ -129,7 +129,7 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-data/PFAs-VECTOR-NAMES-Basic-with-Core-with-Alliance.csv
+#data/PFAs-VECTOR-NAMES-Basic-with-Core-with-Alliance.csv
 
 .vscode/
 log/

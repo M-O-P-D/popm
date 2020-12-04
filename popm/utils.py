@@ -72,15 +72,18 @@ def collate_and_write_results(config, location_lookup, deployments, allocations,
 
 def adjust_staffing(unadjusted_force_data, staff_absence, duty_ratio):
   force_data = unadjusted_force_data.copy()
-  # adjust officer numbers to approximate shift patterns
+
+  # adjust officer numbers to approximate shift patterns and/or absence
   # reduce totals
   force_data[['Officers', 'POP']] = (force_data[['Officers', 'POP']] * duty_ratio * (1-staff_absence)).astype(int)
+
+  # decouple the category totals from the core area values
 
   # reduce numbers in each category consistent with the new totals above
   for i,r in force_data[CORE_FUNCTIONS].iterrows():
     officers = r.to_numpy()
-    officers = officers / np.sum(officers)
-    officers = hl.prob2IntFreq(officers, force_data.loc[i, "Officers"])["freq"]
+    new_total = int(np.sum(officers) * duty_ratio * (1-staff_absence))
+    officers = hl.prob2IntFreq(officers, new_total)["freq"]
     # couldnt figure out a way to do this without a loop
     for j,f in enumerate(CORE_FUNCTIONS):
       force_data.loc[i, f] = officers[j]
@@ -88,8 +91,8 @@ def adjust_staffing(unadjusted_force_data, staff_absence, duty_ratio):
   columns = [f + "_POP" for f in CORE_FUNCTIONS]
   for i,r in force_data[columns].iterrows():
     officers = r.to_numpy()
-    officers = officers / np.sum(officers)
-    officers = hl.prob2IntFreq(officers, force_data.loc[i, "POP"])["freq"]
+    new_total = int(np.sum(officers) * duty_ratio * (1-staff_absence))
+    officers = hl.prob2IntFreq(officers, new_total)["freq"]
     # couldnt figure out a way to do this without a loop
     for j,f in enumerate(columns):
       force_data.loc[i, f] = officers[j]
