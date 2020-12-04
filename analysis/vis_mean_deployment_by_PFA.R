@@ -11,6 +11,9 @@ setwd(root_path_results)
 #USER PARAM
 n_events <- 10
 shift_allocation <- 100
+large_event_PSUs <- 99
+medium_event_PSUs <- 35
+small_event_PSUs <- 15
 
 
 pdf(paste0("AggregateOut/Mean_SD_deployment_by_events.pdf"), height = 11, width = 11)
@@ -32,15 +35,15 @@ for(event_size in c("small","medium","large"))
   head(df)
   
     if(event_size == "large") 
-    {df <- filter(df, EventStart == 0 & Required == 5000)  
+    {df <- filter(df, EventStart == 0 & Required == (large_event_PSUs * 25))  
     print(paste0("Visualising ", num_events, " Large Events"))
     psu_count <- 200}
     if(event_size == "medium") 
-    {df <- filter(df, EventStart == 0 & Required == 2000)
+    {df <- filter(df, EventStart == 0 & Required == (medium_event_PSUs * 25))
     print(paste0("Visualising ", num_events, "Medium Events"))
     psu_count <- 80}
     if(event_size == "small") 
-    {df <- filter(df, EventStart == 0 & Required == 500)
+    {df <- filter(df, EventStart == 0 & Required == (small_event_PSUs * 25))
     print(paste0("Visualising ", num_events, " Small Events"))
     psu_count <- 20}
     

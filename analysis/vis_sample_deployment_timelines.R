@@ -9,6 +9,9 @@ setwd(root_path_results)
 #USER PARAM
 n_events <- 10
 shift_allocation <- 100
+large_event_PSUs <- 99
+medium_event_PSUs <- 35
+small_event_PSUs <- 15
 
 for(num_events in 1:n_events) 
 {
@@ -24,9 +27,9 @@ for(num_events in 1:n_events)
   df <- merge(df, dflookup, by = "RunId")
   head(df)
   
-  small_immediate_start <- filter(df, EventStart == 0 & Required == 500)
-  medium_immediate_start <- filter(df, EventStart == 0 & Required == 2000)
-  large_immediate_start <- filter(df, EventStart == 0 & Required == 5000)
+  small_immediate_start <- filter(df, EventStart == 0 & Required == (small_event_PSUs * 25))}
+  medium_immediate_start <- filter(df, EventStart == 0 & Required == (medium_event_PSUs * 25))}
+  large_immediate_start <- filter(df, EventStart == 0 & Required == (large_event_PSUs * 25))}
   
   #store var for number of rows that need to be extracted to generate 12 sample plots 
   sample_count_rows <- num_events*12*24 #number of events x 12 plots x 24 hours 
