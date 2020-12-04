@@ -7,7 +7,7 @@ root_path_results <- getwd()
 setwd(root_path_results)
 
 #USER PARAM
-n_events <- 10
+n_events <- 3
 shift_allocation <- 100
 large_event_PSUs <- 99
 medium_event_PSUs <- 35
@@ -27,9 +27,9 @@ for(num_events in 1:n_events)
   df <- merge(df, dflookup, by = "RunId")
   head(df)
   
-  small_immediate_start <- filter(df, EventStart == 0 & Required == (small_event_PSUs * 25))}
-  medium_immediate_start <- filter(df, EventStart == 0 & Required == (medium_event_PSUs * 25))}
-  large_immediate_start <- filter(df, EventStart == 0 & Required == (large_event_PSUs * 25))}
+  small_immediate_start <- filter(df, EventStart == 0 & Required == (small_event_PSUs * 25))
+  medium_immediate_start <- filter(df, EventStart == 0 & Required == (medium_event_PSUs * 25))
+  large_immediate_start <- filter(df, EventStart == 0 & Required == (large_event_PSUs * 25))
   
   #store var for number of rows that need to be extracted to generate 12 sample plots 
   sample_count_rows <- num_events*12*24 #number of events x 12 plots x 24 hours 
@@ -49,7 +49,7 @@ for(num_events in 1:n_events)
     geom_segment(size=2, aes(x = 1, y = 0, xend = 1, yend = 10), color="grey") +
     geom_segment(size=2, aes(x = 4, y = 0, xend = 4, yend = 40), color="grey") +
     geom_segment(size=2, aes(x = 8, y = 0, xend = 8, yend = 60), color="grey") +
-    labs(title = paste("Sample of" , num_events , "simultaneous large (200 PSUs) seats-of-unrest scenarios"),
+    labs(title = paste("Sample of" , num_events , "simultaneous large (", large_event_PSUs , "PSUs) seats-of-unrest scenarios"),
          subtitle = "Color Lines: % of required resources deployed to event, Vertical Bars: Recognised mobilisation targets",
          y = "% of required resources", x = "Hours from event start")+ 
     scale_fill_brewer(palette="Dark2") +
@@ -63,7 +63,7 @@ for(num_events in 1:n_events)
     geom_segment(size=2, aes(x = 1, y = 0, xend = 1, yend = 10), color="grey") +
     geom_segment(size=2, aes(x = 4, y = 0, xend = 4, yend = 40), color="grey") +
     geom_segment(size=2, aes(x = 8, y = 0, xend = 8, yend = 60), color="grey") +
-    labs(title = paste("Sample of" , num_events , "simultaneous medium (80 PSUs) seats-of-unrest scenarios"),
+    labs(title = paste("Sample of" , num_events , "simultaneous medium (", medium_event_PSUs , "PSUs) seats-of-unrest scenarios"),
          subtitle = "Color Lines: % of required resources deployed to event, Vertical Bars: Recognised mobilisation targets",
          y = "% of required resources", x = "Hours from event start")+ 
     scale_fill_brewer(palette="Dark2") +
@@ -76,7 +76,7 @@ for(num_events in 1:n_events)
     geom_segment(size=2, aes(x = 1, y = 0, xend = 1, yend = 10), color="grey") +
     geom_segment(size=2, aes(x = 4, y = 0, xend = 4, yend = 40), color="grey") +
     geom_segment(size=2, aes(x = 8, y = 0, xend = 8, yend = 60), color="grey") +
-    labs(title = paste("Sample of" , num_events , "simultaneous small (20 PSUs) seats-of-unrest scenarios"),
+    labs(title = paste("Sample of" , num_events , "simultaneous small (", small_event_PSUs , "PSUs) seats-of-unrest scenarios"),
          subtitle = "Color Lines: % of required resources deployed to event, Vertical Bars: Recognised mobilisation targets",
          y = "% of required resources", x = "Hours from event start", fill = "Dose (mg)")+ 
     facet_wrap(~ EventLocations , ncol=2)
