@@ -18,10 +18,10 @@ def rank(forces, name, routes, event_end_minus1):
   """
   Ranks according to distance/cost and supply
   """
-  # TODO should we increase ranking for PSUs that can get there by *start* of event?
+  # TODO for now ranking is based on average mobilisation time
   ranks = []
   for f in forces:
-    despatch_time = ForcePSUAgent.MOBILISATION_TIME
+    despatch_time = ForcePSUAgent.MIN_MOBILISATION_TIME
     if f.name != name:
       despatch_time += routes.loc[f.name, name]["time"]
     if despatch_time < event_end_minus1:
@@ -35,6 +35,7 @@ def mark_psu_assigned(force_area, event_agent, psu_agents, include_reserved=Fals
     return #raise ValueError("no psu available for dispatch from %s to %s" % (force_name, event_location))
   avail[0].assigned = True
   avail[0].dispatched = False
+  avail[0].dispatch_time = 1.0 # TODO vary according to guidelines
   avail[0].deployed = False
   avail[0].assigned_to = event_agent.name #event_location
   avail[0].dest = event_agent.name

@@ -35,7 +35,15 @@ class ForceAreaAgent(GeoAgent):
 
 class ForcePSUAgent(GeoAgent):
 
-  MOBILISATION_TIME = 1.0 # hours
+  MOBILISATION_TIMES = {
+    0.1: 1.0, # 10% in 1 hour
+    0.4: 4.0, # 40% in 4 hours
+    0.6: 8.0,  # 60% in 8 hours
+    1.0: 16.0 # NB this figure is not part of the nationally recornised public order mobilsation timelines
+  }
+
+  # this is use for the ranking algorithm
+  MIN_MOBILISATION_TIME = 1
 
   def __init__(self, unique_id, model, shape):
 
@@ -43,6 +51,7 @@ class ForcePSUAgent(GeoAgent):
 
     self.assigned = False
     self.dispatched = False
+    self.dispatch_time = None
     self.deployed = False
     self.dest = None
     self.dest_id = None
@@ -76,11 +85,12 @@ class ForcePSUAgent(GeoAgent):
 
   def step(self):
 
-    if self.model.time() < ForcePSUAgent.MOBILISATION_TIME:
-      return
-
     # case 0: not assigned and at base
     if (not self.assigned and not self.dispatched) or self.dest is None:
+      return
+
+    # case 0.5: not yet dispatched
+    if self.model.time() < self.dispatch_time:
       return
 
     dest = self.model.centroids.loc[self.dest, "geometry"]
@@ -109,7 +119,7 @@ class ForcePSUAgent(GeoAgent):
         time = self.model.routes.loc[self.name, self.assigned_to]["time"]
 
       # if we arrive at event, update agents
-      if self.model.time() >= ForcePSUAgent.MOBILISATION_TIME + time: # TODO offset w.r.t event start
+      if self.model.time() >= self.dispatch_time + time: # TODO offset w.r.t event start
         e = self.__get_event_agent()
         # if arriving at event, find the associated event and update it
         self.deployed = True
@@ -123,7 +133,7 @@ class ForcePSUAgent(GeoAgent):
         # move if event is not in home force area
         if time > 0.0:
           xy = route.xy
-          timeline = np.linspace(ForcePSUAgent.MOBILISATION_TIME, ForcePSUAgent.MOBILISATION_TIME + time, len(xy[0])) # TODO offset w.r.t event start
+          timeline = np.linspace(self.dispatch_time, self.dispatch_time + time, len(xy[0])) # TODO offset w.r.t event start
           t = self.model.time()
           self.shape = Point(np.interp(t, timeline, xy[0]), np.interp(t, timeline, xy[1]))
 
