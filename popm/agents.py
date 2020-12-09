@@ -113,7 +113,7 @@ class ForcePSUAgent(GeoAgent):
       #   print(self.dispatch_time, self.model.time())
       # must be time to leave
       self.dispatched = True
-      print("t=%f dispatching PSU from %s to %s" % (self.model.time(), self.name, self.dest))
+      #print("t=%f dispatching PSU from %s to %s" % (self.model.time(), self.name, self.dest))
 
     # case 2: assigned and dispatched, i.e. en route to event
     if self.assigned and self.dispatched and not self.deployed:
