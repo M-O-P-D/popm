@@ -36,10 +36,10 @@ class ForceAreaAgent(GeoAgent):
 class ForcePSUAgent(GeoAgent):
 
   MOBILISATION_TIMES = {
-    0.1: 1.0, # 10% in 1 hour
-    0.4: 4.0, # 40% in 4 hours
-    0.6: 8.0,  # 60% in 8 hours
-    1.0: 16.0 # NB this figure is not part of the nationally recornised public order mobilsation timelines
+    1: 0.1, # 10% in 1 hour
+    4: 0.4, # 40% in 4 hours
+    8: 0.6,  # 60% in 8 hours
+    16: 1.0 # NB this figure is not part of the nationally recornised public order mobilsation timelines
   }
 
   # this is use for the ranking algorithm
@@ -102,13 +102,18 @@ class ForcePSUAgent(GeoAgent):
 
     # case 1: assigned but not yet dispatched...potentially falls though to case 2
     if self.assigned and not self.dispatched:
-      e = self.__get_event_agent()
-      if self.name == self.dest:
-        travel_time = 0
-      else:
-        travel_time = self.model.routes.loc[self.name, self.assigned_to]["time"]
-      if travel_time > e.time_to_start - self.model.timestep:
-        self.dispatched = True
+      # we no longer require PSUs to *arrive* at the event by the dispatch time
+      # e = self.__get_event_agent()
+      # if self.name == self.dest:
+      #   travel_time = 0
+      # else:
+      #   travel_time = self.model.routes.loc[self.name, self.assigned_to]["time"]
+      # if travel_time > e.time_to_start - self.model.timestep:
+      #   self.dispatched = True
+      #   print(self.dispatch_time, self.model.time())
+      # must be time to leave
+      self.dispatched = True
+      print("t=%f dispatching PSU from %s to %s" % (self.model.time(), self.name, self.dest))
 
     # case 2: assigned and dispatched, i.e. en route to event
     if self.assigned and self.dispatched and not self.deployed:
