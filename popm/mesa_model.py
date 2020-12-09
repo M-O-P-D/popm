@@ -7,7 +7,7 @@ from mesa_geo import GeoSpace
 
 from .agents import ForceAreaAgent, ForcePSUAgent, PublicOrderEventAgent
 from .initialisation import load_force_data, create_psu_data, initialise_event_data
-from .utils import adjust_staffing
+from .utils import adjust_staffing, hmm
 from .negotiation import allocate
 from .data_collection import * #get_num_assigned, get_num_deployed, get_num_shortfall, get_num_deficit
 
@@ -94,12 +94,13 @@ class PublicOrderPolicing(Model):
     for agent in event_agents:
       self.schedule.add(agent)
 
-    self.running = True # doesnt work?
-    # now assign PSUs to events
     allocate(event_agents, force_agents, psu_agents, self.routes, self.log)
 
+    self.running = True # doesnt work?
+    # now assign PSUs to events
+
   def time(self):
-    return (self.schedule.steps+1) * self.timestep
+    return (self.schedule.steps) * self.timestep
 
   def step(self):
     """
@@ -119,6 +120,6 @@ class PublicOrderPolicing(Model):
       # stop when all police are back home i.e. not assigned or dispatched
       active_psus = [a for a in self.schedule.agents if isinstance(a, ForcePSUAgent) and (a.assigned == True or a.dispatched == True)]
       if not any(active_psus):
-        print("All PSUs inactive at time %.2f, halting model" % self.time())
+        print("All PSUs inactive at time %s, halting model" % hmm(self.time()))
         self.running = False
 

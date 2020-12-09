@@ -1,3 +1,4 @@
+from math import ceil # numpy as np
 from .initialisation import PSU_OFFICERS
 from .agents import ForcePSUAgent
 
@@ -35,7 +36,7 @@ def mark_psu_assigned(force_area, event_agent, psu_agents, include_reserved=Fals
     return #raise ValueError("no psu available for dispatch from %s to %s" % (force_name, event_location))
   avail[0].assigned = True
   avail[0].dispatched = False
-  avail[0].dispatch_time = 1.0 # TODO vary according to guidelines
+  avail[0].dispatch_time = None # computed later to meet guidelines - see allocate
   avail[0].deployed = False
   avail[0].assigned_to = event_agent.name #event_location
   avail[0].dest = event_agent.name
@@ -111,4 +112,24 @@ def allocate(event_agents, force_agents, psu_agents, routes, log):
     # if still not fully resourced, print a message
     if req > 0:
       log.append("** %s event cannot be fully resource allocated **" % a.name)
+
+  for e in event_agents:
+    for f in force_agents:
+      # first count PSUs
+      psus = [psu for psu in psu_agents if e.name == psu.dest and f.name == psu.name]
+      alloc = len(psus)
+      if alloc:
+        # create correcly sized and proportioned array of mobilisation times
+        mob = [1] * int(ceil(ForcePSUAgent.MOBILISATION_TIMES[1] * alloc))
+        mob.extend([4] * (int(ceil(ForcePSUAgent.MOBILISATION_TIMES[4] * alloc)) - len(mob)))
+        mob.extend([8] * (int(ceil(ForcePSUAgent.MOBILISATION_TIMES[8] * alloc)) - len(mob)))
+        mob.extend([16] * (alloc - len(mob)))
+
+        assert len(mob) == alloc
+
+        for i, psu in enumerate(psus):
+          psu.dispatch_time = mob[i]
+
+      # # round up fractions to ensure always meet the target
+      #   print("CHECK: %d allocated from %s to %s %s %d" % (alloc, f.name, e.name, mob, len(mob)))
 

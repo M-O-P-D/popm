@@ -1,10 +1,10 @@
 {
   "no_of_events": 2,
-  "event_locations": 4,
-  "event_resources": [5000],
+  "event_locations": 1,
+  "event_resources": [2475],
   "event_start": [0],
   "event_duration": 24,
   "staff_absence": 0,
-  "duty_ratio": 50,
-  "timestep": 60
+  "duty_ratio": 100,
+  "timestep": 15
 }
