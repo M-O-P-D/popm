@@ -17,8 +17,6 @@ CORE_FUNCTIONS = ["emergency", "firearms", "major_incident", "public_order", "se
 
 from .utils import npgen, npbitgen
 
-
-
 def load_force_data():
 
   geojson = "./data/force_boundaries_ugc.geojson"
@@ -43,13 +41,15 @@ def load_force_data():
     .replace({"Metropolitan": "Metropolitan Police",
               "Bedfordshire": "Beds Cambs Herts"}) \
     .rename({"Force": "name"}, axis=1)
+    #\.set_index("name", drop=True)
   # POP = Public Order (trained) Police
 
   populations = pd.read_csv(population_data) \
     .replace({"London, City of": "City of London"}) \
     .rename({"Police Force": "name", "MYE2018": "population", "SNHP2017": "households"}, axis=1)[["name", "population", "households"]]
+    #\.set_index("name", drop=True)
 
-  gdf = gdf.merge(data, on="name", how="left", left_index=True).fillna(0).merge(populations, on="name")
+  gdf = gdf.merge(data, how="left", on="name").fillna(0).merge(populations, on="name")
 
   # NOTE warnings (which have been silenced):
   # pandas/core/generic.py:5155: UserWarning: Geometry is in a geographic CRS. Results from 'area' are likely incorrect. Use 'GeoSeries.to_crs()'
@@ -68,7 +68,7 @@ def load_force_data():
     .set_index("name", drop=True)
 
   # ensure data is not geographically linked by sorting alphabetically
-  force_data = force_data.sort_values(["name"]).reset_index(drop=True)
+  force_data = force_data.sort_values(["name"]).set_index("name", drop=True)
 
   return force_data, centroids
 
@@ -78,79 +78,46 @@ def create_psu_data(forces, centroids):
   # taken from non-absent POP-trained officers
 
   # Assumption that each core function has a core of essential officers that can't be deployed elsewhere
-  avail = 0
+  forces["available_psus"] = 0
   for _, f in enumerate(CORE_FUNCTIONS):
-    avail += np.minimum(forces[f+"_POP"], np.maximum(0, forces[f] - forces[f+"_MIN"]))
+    forces["available_psus"] += np.minimum(forces[f+"_POP"], np.maximum(0, forces[f] - forces[f+"_MIN"]))
 
-  forces["available_psus"] = np.floor(avail / PSU_OFFICERS).astype(int)
+  # convert officers to full PSUs
+  forces["available_psus"] = np.floor(forces["available_psus"] / PSU_OFFICERS).astype(int)
   forces["dispatched_psus"] = 0
 
-  psu_data = forces[["name", "Alliance", "geometry"]].copy()
+  forces.to_csv("ffs.csv")
+
+  psu_data = forces[["Alliance", "geometry", "available_psus"]].copy()
   # switch from boundary to centroid
-  psu_data["geometry"] = centroids.loc[psu_data["name"]]["geometry"].values
+  psu_data = pd.merge(psu_data.drop("geometry", axis=1), centroids["geometry"], left_index=True, right_index=True)
 
-  # switch geometry from boundary to centroid
-  #TODO psu_data["geometry"] = centroids.loc[""] psu_data[]
-  for _, r in forces.iterrows():
-    n = r.available_psus
-    nres = min(r.reserved_psus, r.available_psus) # in case the reserve number is higher than the available
-    name = forces.name[r.name] # no idea why r.name is a number not a string
-    if n < 1:
-      psu_data.drop(psu_data[psu_data.name == name].index, inplace=True)
-    if n > 1: # first add reserved psus (that don't leave force area)
-      psu = psu_data[psu_data["name"] == name]
-      psu_data = psu_data.append([psu]*(n-1),ignore_index=True)
-    psu_data.loc[psu_data["name"] == name, "reserved"] = [True]*nres + [False]*(n-nres)
-    # check we have the right number
-    assert len(psu_data[psu_data.name == name]) == n, "%s %d vs %d" % (name, len(psu_data[psu_data.name == name]), n)
+  # duplicate so have a row per PSU
+  psu_data = psu_data.loc[np.repeat(psu_data.index.values,psu_data.available_psus)].drop("available_psus", axis=1)
 
-  # all now live at force centroid for routing purposes
-
-  # for name in forces.name:
-  #   single_psu_data = psu_data[psu_data.name == name]
-  #   for idx, r in single_psu_data.iterrows():
-  #     # p = deserialise_geometry(r["centroid"])
-  #     # x = p.x - rows * dx / 2
-  #     # y = p.y - rows * dy / 2
-
-  #     # # NB // is integer division
-  #     psu_data.at[idx, "geometry"] = r["centroid"] #Point([x + j // rows * dx, y + j % rows * dy])
-  #     #print(psu_data.at[idx, "geometry"])
-
-  # # now covert geometry from the force area polygon a unique offset from the centroid
-  # for name in forces.name:
-
-  #   dx = 1000
-  #   dy = 1000
-  #   single_psu_data = psu_data[psu_data.name == name]
-
-  #   rows = ceil(sqrt(len(single_psu_data)))
-  #   j = 0
-  #   for idx, r in single_psu_data.iterrows():
-  #     p = deserialise_geometry(r["centroid"])
-  #     x = p.x - rows * dx / 2
-  #     y = p.y - rows * dy / 2
-
-  #     # # NB // is integer division
-  #     psu_data.at[idx, "geometry"] = Point([x + j // rows * dx, y + j % rows * dy])
-  #     #print(psu_data.at[idx, "geometry"])
-  #     j = j + 1
+  # now reserve any PSUs that dont travel outside the force area
+  psu_data["reserved"] = False
+  res_forces = forces[forces.reserved_psus > 0]
+  for name, row in res_forces.iterrows():
+    npsus = row["available_psus"]
+    nres = min(npsus, row["reserved_psus"])
+    psu_data.loc[name, "reserved"] = [True] * nres + [False] * (npsus - nres)
 
   psu_data["assigned_to"] = None
   psu_data["assigned"] = False
   psu_data["dispatched"] = False
   psu_data["deployed"] = False
-  psu_data.index += 1000 # ensure unique
 
-  return psu_data
+  # PSUs have a unique numeric index
+  return psu_data.reset_index()
 
 
 def initialise_event_data(model, event_resources, event_start, event_duration, force_data, centroids):
   # activate events as per parameters
-  event_data = force_data.loc[model.event_locations, ["name", "Alliance", "geometry"]].sample(frac=1, random_state=npbitgen).reset_index(drop=True)
+  event_data = force_data.loc[model.event_locations, ["Alliance", "geometry"]].sample(frac=1, random_state=npbitgen)
 
   # switch from boundary to centroid
-  event_data["geometry"] = centroids.loc[event_data["name"]]["geometry"].values
+  event_data["geometry"] = centroids.loc[event_data.index]["geometry"].values
 
   # no longer random in force area
   # for i, r in event_data.iterrows():
@@ -167,7 +134,5 @@ def initialise_event_data(model, event_resources, event_start, event_duration, f
   # times relative to current step
   event_data["time_to_start"] = event_start
   event_data["time_to_end"] = event_start + event_duration
-
-  event_data.index += 100 # ensure unique
 
   return event_data

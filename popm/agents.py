@@ -42,8 +42,9 @@ class ForcePSUAgent(GeoAgent):
     16: 1.0 # NB this figure is not part of the nationally recornised public order mobilsation timelines
   }
 
-  # this is use for the ranking algorithm
-  MIN_MOBILISATION_TIME = 1
+  # # this is use for the ranking algorithm
+  # now defined in negotiation.py
+  # MIN_MOBILISATION_TIME = 1
 
   def __init__(self, unique_id, model, shape):
 

@@ -9,7 +9,7 @@ from .agents import ForceAreaAgent, ForcePSUAgent, PublicOrderEventAgent
 from .initialisation import load_force_data, create_psu_data, initialise_event_data
 from .utils import adjust_staffing, hmm
 from .negotiation import allocate
-from .data_collection import * #get_num_assigned, get_num_deployed, get_num_shortfall, get_num_deficit
+from .data_collection import get_num_assigned, get_num_deployed, get_num_shortfall, get_num_deficit
 
 class PublicOrderPolicing(Model):
   # below ends up in the "About" menu
@@ -30,6 +30,63 @@ class PublicOrderPolicing(Model):
     # hourly (input is minutes)
     self.timestep = timestep / 60
 
+    if isinstance(event_locations, str) and event_locations == "Fixed":
+      self.reset_randomizer(19937)
+
+    self.routes = routes
+    # cache centroids to avoid (de)serialisation inefficiencies
+    self.centroids = centroids
+
+    # create PSU dataset (which appends to force data too, so must do this *before* creating the force agents)
+    psu_data = create_psu_data(self.force_data, centroids)
+
+    # for fixed events
+    if isinstance(event_locations, str) and event_locations == "Breaking Point":
+      self.event_locations = ["Metropolitan Police", "Greater Manchester", "West Midlands"]
+    # otherwise random (with or without fixed seed, see above)
+    elif isinstance(event_locations, (tuple, list, np.ndarray)):
+      if len(event_locations) != no_of_events:
+        raise ValueError("event number (%d) and locations (%s) mismatch" % (no_of_events, event_locations))
+      self.event_locations = [self.force_data.index[i] for i in event_locations]
+    else:
+      self.event_locations = self.random.sample(list(self.force_data.index.values), min(no_of_events, len(self.force_data)))
+
+    event_data = initialise_event_data(self, event_resources, event_start, event_duration, self.force_data, centroids)
+
+    # do negotiation/allocation on the dataframe representation, faster and more portable
+    psu_data = allocate(event_data, self.force_data, psu_data, self.routes, self.logger)
+
+    # Mesa-specific initialisation
+
+    # Set up the grid and schedule.
+    self.schedule = SimultaneousActivation(self)
+    self.grid = GeoSpace(crs="epsg:27700")
+
+    # Set up the force agents - unique index offset 0
+    factory = AgentCreator(ForceAreaAgent, {"model": self}, crs="epsg:27700")
+    self.force_data["id"] = range(len(self.force_data))
+    force_agents = factory.from_GeoDataFrame(self.force_data.reset_index(), unique_id="id")
+    self.grid.add_agents(force_agents)
+    for agent in force_agents:
+      self.schedule.add(agent)
+
+    # Set up the PSU agents - unique index offset 1000
+    factory = AgentCreator(ForcePSUAgent, {"model": self}, crs="epsg:27700")
+    psu_data["id"] = range(1000, 1000 + len(psu_data))
+    psu_agents = factory.from_GeoDataFrame(psu_data.reset_index(), unique_id="id")
+    self.grid.add_agents(psu_agents)
+    for agent in psu_agents:
+      self.schedule.add(agent)
+
+    # then the public order event data and agents - unique index offset 100
+    self.logger("Events started in %s" % event_data.index.values)
+    factory = AgentCreator(PublicOrderEventAgent, { "model": self}, crs="epsg:27700")
+    event_data["id"] = range(100, 100 + len(event_data))
+    event_agents = factory.from_GeoDataFrame(event_data.reset_index(), unique_id="id")
+    self.grid.add_agents(event_agents)
+    for agent in event_agents:
+      self.schedule.add(agent)
+
     self.datacollector = DataCollector(
       model_reporters={
         "Assigned": get_num_assigned,
@@ -46,58 +103,11 @@ class PublicOrderPolicing(Model):
       }
     )
 
-    if isinstance(event_locations, str) and event_locations == "Fixed":
-      self.reset_randomizer(19937)
-
-    # Set up the grid and schedule.
-    self.schedule = SimultaneousActivation(self)
-    self.grid = GeoSpace(crs="epsg:27700")
-
-    self.routes = routes
-    # cache centroids to avoid (de)serialisation inefficiencies
-    self.centroids = centroids
-
-    # create PSU dataset (which appends to force data too, so must do this *before* creating the force agents)
-    psu_data = create_psu_data(self.force_data, centroids)
-
-    # Set up the force agents
-    factory = AgentCreator(ForceAreaAgent, {"model": self}, crs="epsg:27700")
-    force_agents = factory.from_GeoDataFrame(self.force_data)
-    self.grid.add_agents(force_agents)
-    for agent in force_agents:
-      self.schedule.add(agent)
-
-    # Set up the PSU agents
-    factory = AgentCreator(ForcePSUAgent, {"model": self}, crs="epsg:27700")
-    psu_agents = factory.from_GeoDataFrame(psu_data)
-    self.grid.add_agents(psu_agents)
-    for agent in psu_agents:
-      self.schedule.add(agent)
-
-    # then the public order event data and agents
-    # for fixed events
-    if isinstance(event_locations, str) and event_locations == "Breaking Point":
-      self.event_locations = list(self.force_data.name[self.force_data.name.isin(["Metropolitan Police", "Greater Manchester", "West Midlands"])].index)
-    # otherwise random (with or without fixed seed, see above)
-    elif isinstance(event_locations, (tuple, list, np.ndarray)):
-      if len(event_locations) != no_of_events:
-        raise ValueError("event number (%d) and locations (%s) mismatch" % (no_of_events, event_locations))
-      self.event_locations = event_locations
-    else:
-      self.event_locations = self.random.sample(list(self.force_data.index.values), min(no_of_events, len(self.force_data)))
-
-    event_data = initialise_event_data(self, event_resources, event_start, event_duration, self.force_data, centroids)
-    self.log.append("Events started in %s" % event_data["name"].values)
-    factory = AgentCreator(PublicOrderEventAgent, { "model": self}, crs="epsg:27700")
-    event_agents = factory.from_GeoDataFrame(event_data)
-    self.grid.add_agents(event_agents)
-    for agent in event_agents:
-      self.schedule.add(agent)
-
-    allocate(event_agents, force_agents, psu_agents, self.routes, self.log)
-
     self.running = True # doesnt work?
     # now assign PSUs to events
+
+  def logger(self, msg):
+    self.log.append(msg)
 
   def time(self):
     return (self.schedule.steps) * self.timestep
