@@ -58,32 +58,33 @@ def run(config, run_no, resources_baseline):
   # split the to, from column
   allocations["EventForce"] = allocations["index"].apply(lambda e: e[0])
   allocations["AssignedForce"] = allocations["index"].apply(lambda e: e[1])
-  allocations["EventAlliance"] = allocations["EventForce"].apply(lambda e: force_data[force_data.name == e]["Alliance"].values[0])
-  allocations["AssignedAlliance"] = allocations["AssignedForce"].apply(lambda e: force_data[force_data.name == e]["Alliance"].values[0])
+  allocations["EventAlliance"] = allocations["EventForce"].apply(lambda e: force_data.loc[e, "Alliance"])
+  allocations["AssignedAlliance"] = allocations["AssignedForce"].apply(lambda e: force_data.loc[e, "Alliance"])
   allocations["Alliance"] = (allocations["EventAlliance"] == allocations["AssignedAlliance"])
   allocations["RunId"] = run_no
   allocations["Requirement"] = config["event_resources"] / PSU_OFFICERS
   allocations.drop(["index", "EventAlliance", "AssignedAlliance"], axis=1, inplace=True)
 
-  force_resources = resources_baseline[resources_baseline.name.isin(allocations["AssignedForce"])].copy() #force_data[force_data.name.isin(allocations["AssignedForce"])][["name", "Alliance", "Officers", "POP"] + CORE_FUNCTIONS + [c+"_POP" for c in CORE_FUNCTIONS]]
+  force_resources = resources_baseline[resources_baseline.index.isin(allocations["AssignedForce"])].copy()
+  #force_data[force_data.name.isin(allocations["AssignedForce"])][["name", "Alliance", "Officers", "POP"] + CORE_FUNCTIONS + [c+"_POP" for c in CORE_FUNCTIONS]]
   force_resources["RunId"] = run_no
 
   psus = allocations[["AssignedForce", "PSUs"]].groupby("AssignedForce").sum()
   other_core_functions = CORE_FUNCTIONS.copy()
   other_core_functions.remove("public_order")
-  for f in force_resources["name"].values:
+  for f in force_resources.index.values:
     assigned_officers = psus.loc[f, "PSUs"] * PSU_OFFICERS
-    force_resources.loc[force_resources.name==f, "Officers"] -= assigned_officers
-    force_resources.loc[force_resources.name==f, "POP"] -= assigned_officers
+    force_resources.loc[f, "Officers"] -= assigned_officers
+    force_resources.loc[f, "POP"] -= assigned_officers
     # do POP first
-    avail = force_resources.loc[force_resources.name==f, "public_order_POP"].values[0]
+    avail = force_resources.loc[f, "public_order_POP"]
     if avail < assigned_officers:
-      force_resources.loc[force_resources.name==f, "public_order_POP"] = 0
-      force_resources.loc[force_resources.name==f, "public_order"] = 0
+      force_resources.loc[f, "public_order_POP"] = 0
+      force_resources.loc[f, "public_order"] = 0
       assigned_officers -= avail
     else:
-      force_resources.loc[force_resources.name==f, "public_order_POP"] -= assigned_officers
-      force_resources.loc[force_resources.name==f, "public_order"] -= assigned_officers
+      force_resources.loc[f, "public_order_POP"] -= assigned_officers
+      force_resources.loc[f, "public_order"] -= assigned_officers
       assigned_officers = 0
 
     # then other areas weighted proportionately
@@ -161,7 +162,7 @@ if __name__ == "__main__":
     allocations = pd.DataFrame(columns=["RunId", "EventForce", "AssignedForce", "Alliance", "PSUs"])
     resources = pd.DataFrame()
 
-    resources_baseline = adjust_staffing(force_data[["name", "Alliance", "Officers", "POP"] \
+    resources_baseline = adjust_staffing(force_data[["Alliance", "Officers", "POP"] \
       + CORE_FUNCTIONS + [c+"_POP" for c in CORE_FUNCTIONS] + [c+"_MIN" for c in CORE_FUNCTIONS]],
       master_config["staff_absence"]/100, master_config["duty_ratio"]/100)
 
