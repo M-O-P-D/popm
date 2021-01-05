@@ -15,9 +15,6 @@ class ForceAreaAgent(GeoAgent):
 
     super().__init__(unique_id, model, shape)
 
-    self.available_psus = 0
-    self.dispatched_psus = 0
-
   def step(self):
     pass
 
@@ -35,32 +32,16 @@ class ForceAreaAgent(GeoAgent):
 
 class ForcePSUAgent(GeoAgent):
 
-  MOBILISATION_TIMES = {
-    1: 0.1, # 10% in 1 hour
-    4: 0.4, # 40% in 4 hours
-    8: 0.6,  # 60% in 8 hours
-    16: 1.0 # NB this figure is not part of the nationally recornised public order mobilsation timelines
-  }
-
-  # # this is use for the ranking algorithm
-  # now defined in negotiation.py
-  # MIN_MOBILISATION_TIME = 1
-
   def __init__(self, unique_id, model, shape):
 
     super().__init__(unique_id, model, shape)
 
-    self.assigned = False
-    self.dispatched = False
-    self.dispatch_time = None
-    self.deployed = False
-    self.dest = None
-    self.dest_id = None
-
-    # TODO Can't use a ref to agents directly as its not JSON serialisable
-    # self.event_id = None
-    # self.force_id = None
-
+    # self.assigned = False
+    # self.dispatched = False
+    # self.dispatch_time = None
+    # self.deployed = False
+    # self.dest = None
+    # self.dest_id = None
 
   def render(self):
     colour = "Blue"

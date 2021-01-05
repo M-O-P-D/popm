@@ -56,6 +56,8 @@ class PublicOrderPolicing(Model):
     # do negotiation/allocation on the dataframe representation, faster and more portable
     psu_data = allocate(event_data, self.force_data, psu_data, self.routes, self.logger)
 
+    #psu_data.to_csv("psu_data.csv")
+
     # Mesa-specific initialisation
 
     # Set up the grid and schedule.
