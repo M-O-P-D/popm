@@ -7,7 +7,7 @@ MOBILISATION_TIMES = {
   1: 0.1, # 10% in 1 hour
   4: 0.4, # 40% in 4 hours
   8: 0.6,  # 60% in 8 hours
-  16: 1.0 # NB this figure is not part of the nationally recornised public order mobilsation timelines
+  16: 1.0 # NB this figure is not part of the nationally recognised public order mobilisation timelines
 }
 
 
@@ -40,12 +40,12 @@ def allocate(events, forces, psus, routes, logger):
   # ensure we allocate in-location first (to stop resources being taken by other areas)
   for i, r in events.iterrows():
     # allocate self resources
-    req = r.resources_required / PSU_OFFICERS # no. of PSUs
+    req = r.resources_required // PSU_OFFICERS # no. of PSUs
     avail = len(psus[(psus.name == i) & (~psus.assigned)])
     assigned = min(req, avail)
 
     psus.loc[(psus.name == i) & (psus.assigned_to.isnull()), "assigned_to"] = [i] * assigned + [None] * (avail - assigned)
-    psus.loc[(psus.name == i) & (~psus.reserved) & (psus.dest.isnull()), "dest"] = [i] * assigned + [None] * (avail - assigned)
+    psus.loc[(psus.name == i) & (psus.dest.isnull()), "dest"] = [i] * assigned + [None] * (avail - assigned)
     psus.loc[(psus.name == i) & (~psus.assigned), "assigned"] = [True] * assigned + [False] * (avail - assigned)
 
     events.loc[i, "resources_allocated"] += assigned * PSU_OFFICERS # no. of officers
@@ -121,12 +121,8 @@ def allocate(events, forces, psus, routes, logger):
         mob.extend([4] * (int(ceil(MOBILISATION_TIMES[4] * alloc)) - len(mob)))
         mob.extend([8] * (int(ceil(MOBILISATION_TIMES[8] * alloc)) - len(mob)))
         mob.extend([16] * (alloc - len(mob)))
-
         assert len(mob) == alloc
-
         psus.loc[(psus.dest == i) & (psus.name == j), "dispatch_time"] = mob
-        # for i, psu in enumerate(psus):
-        #   psu.dispatch_time = mob[i]
 
   return psus
 
