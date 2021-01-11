@@ -21,7 +21,7 @@ def rank(forces, name, routes, event_end_minus1):
   """
   Ranks according to distance/cost and supply
   """
-  # TODO for now ranking is based on average mobilisation time
+  # TODO for now ranking is based on minimum mobilisation time
   ranks = []
   for i, f in forces.iterrows():
     despatch_time = MIN_MOBILISATION_TIME
@@ -36,6 +36,9 @@ def allocate(events, forces, psus, routes, logger):
   # add cols as needed
   psus["dest"] = None
   psus["dispatch_time"] = None
+  psus["arrive_time"] = None
+  psus["depart_time"] = None
+  psus["return_time"] = None
 
   # ensure we allocate in-location first (to stop resources being taken by other areas)
   for i, r in events.iterrows():
@@ -109,20 +112,27 @@ def allocate(events, forces, psus, routes, logger):
     else:
       logger("Event in %s is underresourced by %d PSUs" % (i, req))
 
-  # now compute dispatch times
-  for i, _ in events.iterrows():
+  # now compute dispatch and arrival times
+  for i, e in events.iterrows():
     for j, _ in forces.iterrows():
       # first count PSUs
       p = psus.loc[(psus.dest == i) & (psus.name == j)]
       alloc = len(p)
       if alloc:
         # create correcly sized and proportioned array of mobilisation times
-        mob = [1] * int(ceil(MOBILISATION_TIMES[1] * alloc))
-        mob.extend([4] * (int(ceil(MOBILISATION_TIMES[4] * alloc)) - len(mob)))
-        mob.extend([8] * (int(ceil(MOBILISATION_TIMES[8] * alloc)) - len(mob)))
-        mob.extend([16] * (alloc - len(mob)))
+        mob = [1 + e.time_to_start] * int(ceil(MOBILISATION_TIMES[1] * alloc))
+        mob.extend([4 + e.time_to_start] * (int(ceil(MOBILISATION_TIMES[4] * alloc)) - len(mob)))
+        mob.extend([8 + e.time_to_start] * (int(ceil(MOBILISATION_TIMES[8] * alloc)) - len(mob)))
+        mob.extend([16 + e.time_to_start] * (alloc - len(mob)))
         assert len(mob) == alloc
         psus.loc[(psus.dest == i) & (psus.name == j), "dispatch_time"] = mob
+        psus.loc[(psus.dest == i) & (psus.name == j), "arrive_time"] = mob
+        psus.loc[(psus.dest == i) & (psus.name == j), "depart_time"] = e.time_to_end
+        psus.loc[(psus.dest == i) & (psus.name == j), "return_time"] = e.time_to_end
+        # TODO check routes indexed by (from, to) not vice versa
+        if i != j:
+          psus.loc[(psus.dest == i) & (psus.name == j), "arrive_time"] += routes.loc[(j, i), "time"]
+          psus.loc[(psus.dest == i) & (psus.name == j), "return_time"] += routes.loc[(i, j), "time"]
 
   return psus
 

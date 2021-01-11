@@ -70,8 +70,6 @@ def load_force_data():
   # ensure data is not geographically linked by sorting alphabetically
   force_data = force_data.sort_values(["name"]).set_index("name", drop=True)
 
-  print(force_data.index)
-
   return force_data, centroids
 
 def create_psu_data(forces, centroids):
