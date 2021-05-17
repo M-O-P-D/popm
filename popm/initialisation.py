@@ -49,7 +49,7 @@ def load_force_data():
     .replace({"London, City of": "City of London"}) \
     .rename({"Police Force": "name", "MYE2018": "population", "SNHP2017": "households"}, axis=1)[["name", "population", "households"]]
 
-  gdf = gdf.merge(data, on="name", how="left", left_index=True).fillna(0).merge(populations, on="name")
+  gdf = gdf.merge(data, on="name", how="left").fillna(0).merge(populations, on="name")
 
   # NOTE warnings (which have been silenced):
   # pandas/core/generic.py:5155: UserWarning: Geometry is in a geographic CRS. Results from 'area' are likely incorrect. Use 'GeoSeries.to_crs()'

@@ -39,7 +39,7 @@ which automatically opens a browser window
 For a non-browser batch run for multiple scenarios and/or more detailed data collection:
 
 ```bash
-python -m batch <scenario-file> [<num_runs>]
+python -m batch <scenario-file>
 ```
 
 ### Docker
