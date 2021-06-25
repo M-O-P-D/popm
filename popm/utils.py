@@ -4,10 +4,10 @@ import math
 import numpy as np
 import pandas as pd
 import pyproj
-from shapely.geometry import shape
 from shapely.ops import transform
-import shapely.wkt
 import humanleague as hl
+from pathlib import Path
+import shutil
 
 from .initialisation import PSU_OFFICERS, CORE_FUNCTIONS
 
@@ -47,13 +47,18 @@ def collate_and_write_results(config, location_lookup, deployments, allocations,
 
   rank, size = run_context()
 
+  # scenario/1event.json -> model-output/1event/
+  path = Path(config.replace("scenario", "model-output").replace(".json", "/"))
+  path.mkdir(parents=True, exist_ok=True)
+  shutil.copy(config, path)
+
   if size == 1:
     # single-process case
-    location_lookup.to_csv(config.replace(".json", "_locations.csv")) # index is run id
-    deployments.to_csv(config.replace(".json", ".csv"), index=False)
-    allocations.to_csv(config.replace(".json", "_allocations.csv"), index=False)
-    resources.to_csv(config.replace(".json", "_resources.csv"), index=False)
-    resources_baseline.to_csv(config.replace(".json", "_resources_baseline.csv"), index=False)
+    location_lookup.to_csv(path / "locations.csv") # index is run id
+    deployments.to_csv(path / "deployments.csv", index=False)
+    allocations.to_csv(path / "allocations.csv", index=False)
+    resources.to_csv(path / "resources.csv", index=False)
+    resources_baseline.to_csv(path / "resources_baseline.csv", index=False)
   else:
     # root process gets data from all the others and writes it
     from mpi4py import MPI
@@ -64,11 +69,11 @@ def collate_and_write_results(config, location_lookup, deployments, allocations,
     all_allocations = comm.gather(allocations, root=0)
     all_resources = comm.gather(resources, root=0)
     if rank == 0:
-      pd.concat(all_location_lookup).to_csv(config.replace(".json", "_locations.csv")) # index is run id
-      pd.concat(all_deployments).to_csv(config.replace(".json", ".csv"), index=False)
-      pd.concat(all_allocations).to_csv(config.replace(".json", "_allocations.csv"), index=False)
-      pd.concat(all_resources).to_csv(config.replace(".json", "_resources.csv"), index=False)
-      resources_baseline.to_csv(config.replace(".json", "_resources_baseline.csv"), index=False)
+      pd.concat(all_location_lookup).to_csv(path / "locations.csv")) # index is run id
+      pd.concat(all_deployments).to_csv(path / "deployments.csv"), index=False)
+      pd.concat(all_allocations).to_csv(path / "allocations.csv"), index=False)
+      pd.concat(all_resources).to_csv(path / "resources.csv"), index=False)
+      resources_baseline.to_csv(path / "resources_baseline.csv"), index=False)
 
 def adjust_staffing(unadjusted_force_data, staff_absence, duty_ratio):
   force_data = unadjusted_force_data.copy()

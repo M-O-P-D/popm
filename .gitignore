@@ -137,6 +137,6 @@ scenario/
 !scenario/*.json
 
 .DS_store
-
+model-output/
 
 
