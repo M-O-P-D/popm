@@ -69,11 +69,11 @@ def collate_and_write_results(config, location_lookup, deployments, allocations,
     all_allocations = comm.gather(allocations, root=0)
     all_resources = comm.gather(resources, root=0)
     if rank == 0:
-      pd.concat(all_location_lookup).to_csv(path / "locations.csv")) # index is run id
-      pd.concat(all_deployments).to_csv(path / "deployments.csv"), index=False)
-      pd.concat(all_allocations).to_csv(path / "allocations.csv"), index=False)
-      pd.concat(all_resources).to_csv(path / "resources.csv"), index=False)
-      resources_baseline.to_csv(path / "resources_baseline.csv"), index=False)
+      pd.concat(all_location_lookup).to_csv(path / "locations.csv") # index is run id
+      pd.concat(all_deployments).to_csv(path / "deployments.csv", index=False)
+      pd.concat(all_allocations).to_csv(path / "allocations.csv", index=False)
+      pd.concat(all_resources).to_csv(path / "resources.csv", index=False)
+      resources_baseline.to_csv(path / "resources_baseline.csv", index=False)
 
 def adjust_staffing(unadjusted_force_data, staff_absence, duty_ratio):
   force_data = unadjusted_force_data.copy()
