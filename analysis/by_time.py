@@ -42,62 +42,29 @@ def analysis(scenario):
 
   print(deployments.head())
 
-  dep_times = deployments[["DeployedPct"]].unstack(level=1)#.drop(24.0, axis=1)
-  dep_times.columns = dep_times.columns.droplevel().astype(str)
+  deployments = deployments[deployments.index.get_level_values("Time") < 24.0]
 
-  # drop 24h as dep=0 (event has ended)
-  dep_times = dep_times.drop(["24.0"], axis=1)
+  fig, axs = plt.subplots(7,6, figsize=(15,15), sharex=True, sharey=True)
+  fig.suptitle("Deployment times, "+scenario.replace("events", " simultaneous public order events"), y=0.99)
+  #print(axs)
 
-
-  dep_times["dep10"] = np.nan
-  dep_times["dep40"] = np.nan
-  dep_times["dep60"] = np.nan
-  dep_times["dep100"] = np.nan
-
-
-  # this works with flat functions
-  def interp(deplevel, deps, times):
-    for i in range(len(times)):
-      if deps[i] >= deplevel: return times[i]
-    return 24.0 # this indicates event not fully resourced where it ends
-
-  t = np.arange(0.0, 24.0, 1.0)
-  for i,r in dep_times.iterrows():
-    #print(i)
-    r["dep10"] = interp(10.0, r.values[:24], t)
-    r["dep40"] = interp(40.0, r.values[:24], t)
-    r["dep60"] = interp(60.0, r.values[:24], t)
-    r["dep100"] = interp(100.0, r.values[:24], t)
-  
-  dep_times = dep_times.drop([str(i) for i in t], axis=1)
-  print(dep_times)
-  dep_times.to_csv(path / "deployment_times.csv")
-#print(df.columns.values)
-
-
-def visualise(scenario):
-  path = Path(f"./model-output/{scenario}")
-
-  dep_times = pd.read_csv(path / "deployment_times.csv", index_col=["RunId", "Event"])
-  print(dep_times.head())
-
-  fig, axs = plt.subplots(nrows=4, figsize=(15,18), sharex=True)
-  i = 0
-  for dep in ["dep10", "dep40", "dep60", "dep100"]:
-    dep_time = dep_times[dep].unstack()
-    axs[i] = sns.boxplot(ax=axs[i], data=dep_time, showfliers = False)#, boxprops=dict(alpha=.3))
-    plt.xticks(rotation=90)
-    axs[i].set_xlabel("")
-    axs[i].set_ylabel("Time to %s%% deployment (hours)" % dep.replace("dep", ""))
-    i = i + 1
-
-  axs[3].set_xlabel("Event location")
-  fig.suptitle(scenario.replace("events", " simultaneous public order events"), y=0.99)
+  for i, force in enumerate(forces):
+    y, x = i // 6, i % 6
+    print(i, x, y, force)
+    dept = deployments.xs(force, level="Event")["DeployedPct"].unstack(level=0)
+    # #print(dept)
+    dept.plot(ax=axs[y,x], legend=False)
+    axs[y,x].set_title(force)
+  plt.xlabel("Time (hours)")
+  plt.ylabel("Deployment (%)")
   plt.tight_layout()
-  plt.savefig(f"./doc/{scenario}.png", bbox_inches="tight")
-  plt.show()
+  plt.savefig(f"./doc/{scenario}-deptime.png", bbox_inches="tight")
+  #plt.show()
+
+
+
 
 if __name__ == "__main__":
   assert len(sys.argv) == 2
   analysis(sys.argv[1])
-  visualise(sys.argv[1])
+  #visualise(sys.argv[1])
