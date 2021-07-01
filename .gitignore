@@ -133,8 +133,6 @@ dmypy.json
 
 .vscode/
 log/
-scenario/
-!scenario/*.json
 
 .DS_store
 model-output/
