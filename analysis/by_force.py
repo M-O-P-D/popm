@@ -97,7 +97,33 @@ def visualise(scenario):
   plt.savefig(f"./doc/{scenario}.png", bbox_inches="tight")
   plt.show()
 
+def summarise(scenario):
+  path = Path(f"./model-output/{scenario}")
+
+  dep_times = pd.read_csv(path / "deployment_times.csv", index_col=["RunId", "Event"])
+  print(dep_times.head())
+
+  #i = 0
+  # for dep in ["dep10", "dep40", "dep60", "dep100"]:
+  #   dep_time = dep_times[dep].unstack()
+  #   print(dep_time.mean())
+  #   break
+  # mean_dep_times = pd.concat([dep_times[dep].unstack().mean() for dep in ["dep10", "dep40", "dep60", "dep100"] ], axis=1)
+  # print(mean_dep_times)
+
+  mean_dep_times = pd.DataFrame(data={dep: dep_times[dep].unstack().mean() for dep in ["dep10", "dep40", "dep60", "dep100"] })
+  print(mean_dep_times)
+  mean_dep_times.to_csv(path / "mean_dep_times.csv")
+
+  #print(dep_times["dep10"].unstack())
+
+  stddev_dep_times = pd.DataFrame(data={dep: dep_times[dep].unstack().std() for dep in ["dep10", "dep40", "dep60", "dep100"] })
+  print(stddev_dep_times)
+  stddev_dep_times.to_csv(path / "stddev_dep_times.csv")
+
+
 if __name__ == "__main__":
   assert len(sys.argv) == 2
   analysis(sys.argv[1])
-  visualise(sys.argv[1])
+  summarise(sys.argv[1])
+  #visualise(sys.argv[1])
