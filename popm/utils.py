@@ -131,8 +131,6 @@ def sample_locations_quasi(n_locations, n_events, max_samples):
   # split samples as evenly as possible over processes
   max_samples = hl.prob2IntFreq(np.full(size, 1/size), max_samples)["freq"][rank]
 
-  print(max_samples)
-
   if max_samples == 0:
     return []
 
@@ -141,8 +139,6 @@ def sample_locations_quasi(n_locations, n_events, max_samples):
   # workaround for issue with skipping being truncated to a power of two is to sample all the numbers in every process,
   # then take a unique chunk to ensure we get different parts of the sequence in each process
   seq = np.sort((hl.sobolSequence(1, max_samples*size, 0)[max_samples*rank:max_samples*(rank+1),0] * n_combs).astype(int))
-
-  print(seq)
 
   # need to work in order, with relative offsets with generator
   seq = np.diff(seq, prepend=0)
