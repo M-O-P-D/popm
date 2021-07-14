@@ -21,13 +21,13 @@ forces = ['Avon and Somerset', 'Beds Cambs Herts', 'Cheshire',
 def analysis(scenario):
   path = Path(f"./model-output/{scenario}")
   allocations = pd.read_csv(path / "allocations.csv", index_col=["RunId", "EventForce", "AssignedForce"])
-  deployments = pd.read_csv(path / "deployments.csv", index_col=["RunId", "Time", "Event"])
+  deployments = pd.read_csv(path / "deployments.csv", index_col=["RunId", "Event"])[["Hit10Pct", "Hit40Pct", "Hit60Pct", "Hit100Pct"]].drop_duplicates()
   locations = pd.read_csv(path / "locations.csv", index_col="RunId")
 
   print(allocations)
   print(deployments)
   print(locations)
-  print(locations.columns.values)
+  #print(locations.columns.values)
 
   # appearances = {force: len(locations[locations.EventLocations.str.contains(force)]) for force in forces}
 
@@ -40,26 +40,37 @@ def analysis(scenario):
   print(appearances.to_string())
   print(appearances.mean())
 
-  print(deployments.head())
+  print(deployments)
+  # need to drop metric as it persists as an index level
+  means = pd.DataFrame(data={ metric: deployments[[metric]].unstack(level=1).mean().droplevel(0) for metric in ["Hit10Pct", "Hit40Pct", "Hit60Pct", "Hit100Pct"]}) \
+    .add_prefix("mean-")
 
-  deployments = deployments[deployments.index.get_level_values("Time") < 24.0]
+  stddevs = pd.DataFrame(data={ metric: deployments[[metric]].unstack(level=1).std().droplevel(0) for metric in ["Hit10Pct", "Hit40Pct", "Hit60Pct", "Hit100Pct"]}) \
+    .add_prefix("stddev-")
 
-  fig, axs = plt.subplots(7,6, figsize=(15,15), sharex=True, sharey=True)
-  fig.suptitle("Deployment times, "+scenario.replace("events", " simultaneous public order events"), y=0.99)
-  #print(axs)
+  dep_times = means.merge(stddevs, left_index=True, right_index=True) 
 
-  for i, force in enumerate(forces):
-    y, x = i // 6, i % 6
-    print(i, x, y, force)
-    dept = deployments.xs(force, level="Event")["DeployedPct"].unstack(level=0)
-    # #print(dept)
-    dept.plot(ax=axs[y,x], legend=False)
-    axs[y,x].set_title(force)
-  plt.xlabel("Time (hours)")
-  plt.ylabel("Deployment (%)")
-  plt.tight_layout()
-  plt.savefig(f"./doc/{scenario}-deptime.png", bbox_inches="tight")
-  #plt.show()
+  print(dep_times)
+  dep_times.to_csv(f"./{scenario}_dep_times.csv")
+
+  #deployments = deployments[deployments.index.get_level_values("Time") < 24.0]
+
+  # fig, axs = plt.subplots(7,6, figsize=(15,15), sharex=True, sharey=True)
+  # fig.suptitle("Deployment times, "+scenario.replace("events", " simultaneous public order events"), y=0.99)
+  # #print(axs)
+
+  # for i, force in enumerate(forces):
+  #   y, x = i // 6, i % 6
+  #   print(i, x, y, force)
+  #   dept = deployments.xs(force, level="Event")["DeployedPct"].unstack(level=0)
+  #   # #print(dept)
+  #   dept.plot(ax=axs[y,x], legend=False)
+  #   axs[y,x].set_title(force)
+  # plt.xlabel("Time (hours)")
+  # plt.ylabel("Deployment (%)")
+  # plt.tight_layout()
+  # plt.savefig(f"./doc/{scenario}-deptime.png", bbox_inches="tight")
+  # #plt.show()
 
 
 
