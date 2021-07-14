@@ -40,6 +40,12 @@ def analysis(scenario):
   print(appearances.to_string())
   print(appearances.mean())
 
+  # subtract mobilisation times
+  deployments.Hit10Pct -= 1.0
+  deployments.Hit40Pct -= 4.0
+  deployments.Hit60Pct -= 8.0
+  deployments.Hit100Pct -= 16.0
+
   print(deployments)
   # need to drop metric as it persists as an index level
   means = pd.DataFrame(data={ metric: deployments[[metric]].unstack(level=1).mean().droplevel(0) for metric in ["Hit10Pct", "Hit40Pct", "Hit60Pct", "Hit100Pct"]}) \
