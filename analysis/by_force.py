@@ -2,6 +2,11 @@ import pandas as pd
 import numpy as np
 from pathlib import Path
 import sys
+import geoplot
+import geoplot.crs as gcrs
+import mapclassify
+
+from popm.initialisation import load_force_data
 
 import seaborn as sns
 import matplotlib.pyplot as plt
@@ -78,24 +83,52 @@ def analysis(scenario):
 def visualise(scenario):
   path = Path(f"./model-output/{scenario}")
 
-  dep_times = pd.read_csv(path / "deployment_times.csv", index_col=["RunId", "Event"])
-  print(dep_times.head())
+  force_data, _ = load_force_data()
+  force_data = force_data[["name", "geometry"]]#.set_index("name", drop=True)
 
-  fig, axs = plt.subplots(nrows=4, figsize=(15,18), sharex=True)
-  i = 0
-  for dep in ["dep10", "dep40", "dep60", "dep100"]:
-    dep_time = dep_times[dep].unstack()
-    axs[i] = sns.boxplot(ax=axs[i], data=dep_time, showfliers = False)#, boxprops=dict(alpha=.3))
-    plt.xticks(rotation=90)
-    axs[i].set_xlabel("")
-    axs[i].set_ylabel("Time to %s%% deployment (hours)" % dep.replace("dep", ""))
-    i = i + 1
+  force_data["label_anchor"] = force_data["geometry"].apply(lambda g: str(g.representative_point())) #.coords[:][0])
 
-  axs[3].set_xlabel("Event location")
-  fig.suptitle(scenario.replace("events", " simultaneous public order events"), y=0.99)
-  plt.tight_layout()
-  plt.savefig(f"./doc/{scenario}.png", bbox_inches="tight")
-  plt.show()
+  print(force_data)
+
+  # [["name", "geometry"]]
+  force_data.to_file("./forces.json", driver="GeoJSON")
+
+  # mean_dep_times = pd.read_csv(path / "mean_dep_times.csv").add_prefix("mean-") #, index_col=["RunId", "Event"])
+  # # print(dep_times.head())
+  # stddev_dep_times = pd.read_csv(path / "stddev_dep_times.csv").add_prefix("stddev-")
+
+  # force_data = force_data.merge(mean_dep_times, left_on="name", right_on="mean-Event").drop("mean-Event", axis=1) \
+  #                        .merge(stddev_dep_times, left_on="name", right_on="stddev-Event").drop("stddev-Event", axis=1)
+  
+
+  # print(force_data)
+  # force_data.to_file(path / "force_data")
+  #print(help(force_data.plot))
+
+  # ax = force_data.plot(figsize=(12,12))
+  # plt.annotate(s=force_data.index, xy=force_data.label_anchor)
+  # # scheme = scheme = mapclassify.Quantiles(force_data.dep10, k=5)
+  # # ax = geoplot.choropleth(force_data.geometry, hue=force_data.dep10, scheme=scheme, projection=gcrs.OSGB, figsize=(12,12))
+
+  # force_data.apply(lambda r: ax.text(*r.geometry.centroid.coords[0], s=r["name"], ha='center', va='top'), axis=1)
+  # plt.axis("off")
+
+  # # fig, axs = plt.subplots(nrows=4, figsize=(15,18), sharex=True)
+  # # i = 0
+  # # for dep in ["dep10", "dep40", "dep60", "dep100"]:
+  # #   dep_time = dep_times[dep].unstack()
+  # #   axs[i] = sns.boxplot(ax=axs[i], data=dep_time, showfliers = False)#, boxprops=dict(alpha=.3))
+  # #   plt.xticks(rotation=90)
+  # #   axs[i].set_xlabel("")
+  # #   axs[i].set_ylabel("Time to %s%% deployment (hours)" % dep.replace("dep", ""))
+  # #   i = i + 1
+
+  # # axs[3].set_xlabel("Event location")
+  # # fig.suptitle(scenario.replace("events", " simultaneous public order events"), y=0.99)
+  # #plt.tight_layout()
+  # # plt.savefig(f"./doc/{scenario}.png", bbox_inches="tight")
+
+  # plt.show()
 
 def summarise(scenario):
   path = Path(f"./model-output/{scenario}")
@@ -112,14 +145,26 @@ def summarise(scenario):
   # print(mean_dep_times)
 
   mean_dep_times = pd.DataFrame(data={dep: dep_times[dep].unstack().mean() for dep in ["dep10", "dep40", "dep60", "dep100"] })
-  print(mean_dep_times)
-  mean_dep_times.to_csv(path / "mean_dep_times.csv")
+  # subtract mobiisation
+  #mean_dep_times.dep10 -= 1.0
+  #mean_dep_times.dep40 -= 4.0
+  #mean_dep_times.dep60 -= 8.0
+  #mean_dep_times.dep100 -= 16.0
+
+  
+  #print(mean_dep_times)
 
   #print(dep_times["dep10"].unstack())
 
   stddev_dep_times = pd.DataFrame(data={dep: dep_times[dep].unstack().std() for dep in ["dep10", "dep40", "dep60", "dep100"] })
-  print(stddev_dep_times)
-  stddev_dep_times.to_csv(path / "stddev_dep_times.csv")
+  #print(stddev_dep_times)
+  
+  mean_dep_times = mean_dep_times.add_prefix("mean-").merge(stddev_dep_times.add_prefix("stddev-"), left_index=True, right_index=True) 
+
+  print(mean_dep_times)
+
+  # stddev_dep_times.to_csv(path / "stddev_dep_times.csv")
+  mean_dep_times.to_csv(f"./{scenario}_dep_times.csv")
 
 
 if __name__ == "__main__":

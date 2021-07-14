@@ -42,8 +42,8 @@ class ForcePSUAgent(GeoAgent):
     16: 1.0 # NB this figure is not part of the nationally recornised public order mobilsation timelines
   }
 
-  # this is use for the ranking algorithm
-  MIN_MOBILISATION_TIME = 1
+  # this is "extra" mobilisation time (on top of above) if needed
+  MIN_MOBILISATION_TIME = 0
 
   def __init__(self, unique_id, model, shape):
 
@@ -131,7 +131,17 @@ class ForcePSUAgent(GeoAgent):
         self.dest = None
         e.resources_present += PSU_OFFICERS
         if e.resources_required <= e.resources_present:
-          self.model.log.append("%s event is fully resourced at t=%s" % (e.name, hmm(self.model.time())))
+          self.model.log.append("%s event is 100%% resourced at t=%s" % (e.name, hmm(self.model.time())))
+          e.hit100pct = self.model.time()
+        elif e.resources_present - PSU_OFFICERS < e.resources_required * 0.6 and e.resources_required * 0.6 <= e.resources_present:
+          self.model.log.append("%s event is 60%% resourced at t=%s" % (e.name, hmm(self.model.time())))
+          e.hit60pct = self.model.time()
+        elif e.resources_present - PSU_OFFICERS < e.resources_required * 0.4 and e.resources_required * 0.4 <= e.resources_present:
+          self.model.log.append("%s event is 40%% resourced at t=%s" % (e.name, hmm(self.model.time())))
+          e.hit40pct = self.model.time()
+        elif e.resources_present - PSU_OFFICERS < e.resources_required * 0.1 and e.resources_required * 0.1 <= e.resources_present:
+          self.model.log.append("%s event is 10%% resourced at t=%s" % (e.name, hmm(self.model.time())))
+          e.hit10pct = self.model.time()
         self.shape = dest
       else:
         route = self.model.routes.loc[self.name, self.assigned_to]["geometry"]
@@ -184,6 +194,11 @@ class PublicOrderEventAgent(GeoAgent):
     super().__init__(unique_id, model, shape)
 
     self.active = True # TODO delayed start
+
+    self.hit10pct = None
+    self.hit40pct = None
+    self.hit60pct = None
+    self.hit100pct = None
 
   def step(self):
     # TODO remove event once ended
