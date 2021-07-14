@@ -42,7 +42,11 @@ class PublicOrderPolicing(Model):
         # "Active": lambda a: (a.time_to_start <= 0.0 and a.time_to_end >= 0.0) if isinstance(a, PublicOrderEventAgent) else None,
         "Required": lambda a: a.resources_required if isinstance(a, PublicOrderEventAgent) else None,
         "Allocated": lambda a: a.resources_allocated if isinstance(a, PublicOrderEventAgent) else None,
-        "Deployed": lambda a: a.resources_present if isinstance(a, PublicOrderEventAgent) else None
+        "Deployed": lambda a: a.resources_present if isinstance(a, PublicOrderEventAgent) else None,
+        "Hit10Pct": lambda a: a.hit10pct if isinstance(a, PublicOrderEventAgent) else None,
+        "Hit40Pct": lambda a: a.hit40pct if isinstance(a, PublicOrderEventAgent) else None,
+        "Hit60Pct": lambda a: a.hit60pct if isinstance(a, PublicOrderEventAgent) else None,
+        "Hit100Pct": lambda a: a.hit100pct if isinstance(a, PublicOrderEventAgent) else None
       }
     )
 
@@ -122,4 +126,6 @@ class PublicOrderPolicing(Model):
       if not any(active_psus):
         print("All PSUs inactive at time %s, halting model" % hmm(self.time()))
         self.running = False
+
+      
 
