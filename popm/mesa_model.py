@@ -44,9 +44,9 @@ class PublicOrderPolicing(Model):
         "Allocated": lambda a: a.resources_allocated if isinstance(a, PublicOrderEventAgent) else None,
         "Deployed": lambda a: a.resources_present if isinstance(a, PublicOrderEventAgent) else None,
         "Hit10Pct": lambda a: a.hit10pct if isinstance(a, PublicOrderEventAgent) else None,
-        "Hit40Pct": lambda a: a.hit10pct if isinstance(a, PublicOrderEventAgent) else None,
-        "Hit60Pct": lambda a: a.hit10pct if isinstance(a, PublicOrderEventAgent) else None,
-        "Hit100Pct": lambda a: a.hit10pct if isinstance(a, PublicOrderEventAgent) else None
+        "Hit40Pct": lambda a: a.hit40pct if isinstance(a, PublicOrderEventAgent) else None,
+        "Hit60Pct": lambda a: a.hit60pct if isinstance(a, PublicOrderEventAgent) else None,
+        "Hit100Pct": lambda a: a.hit100pct if isinstance(a, PublicOrderEventAgent) else None
       }
     )
 
