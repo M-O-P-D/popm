@@ -121,11 +121,18 @@ class PublicOrderPolicing(Model):
       for msg in self.log:
         print(msg)
       self.log = []
-      # stop when all police are back home i.e. not assigned or dispatched
-      active_psus = [a for a in self.schedule.agents if isinstance(a, ForcePSUAgent) and (a.assigned == True or a.dispatched == True)]
-      if not any(active_psus):
-        print("All PSUs inactive at time %s, halting model" % hmm(self.time()))
+
+      # stop when all events are fully deployed
+      active_events = [e for e in self.schedule.agents if isinstance(e, PublicOrderEventAgent) and e.hit100pct is None]
+      if not any(active_events):
+        print("All events fully deployed at time %s, halting model" % hmm(self.time()))
         self.running = False
+
+      # # stop when all police are back home i.e. not assigned or dispatched
+      # active_psus = [a for a in self.schedule.agents if isinstance(a, ForcePSUAgent) and (a.assigned == True or a.dispatched == True)]
+      # if not any(active_psus):
+      #   print("All PSUs inactive at time %s, halting model" % hmm(self.time()))
+      #   self.running = False
 
       
 

@@ -3,9 +3,6 @@ import numpy as np
 from pathlib import Path
 import sys
 
-import seaborn as sns
-import matplotlib.pyplot as plt
-
 forces = ['Avon and Somerset', 'Beds Cambs Herts', 'Cheshire',
        'City of London', 'Cleveland', 'Cumbria', 'Derbyshire',
        'Devon and Cornwall', 'Dorset', 'Durham', 'Dyfed-Powys', 'Essex',
@@ -21,8 +18,13 @@ forces = ['Avon and Somerset', 'Beds Cambs Herts', 'Cheshire',
 def analysis(scenario):
   path = Path(f"./model-output/{scenario}")
   allocations = pd.read_csv(path / "allocations.csv", index_col=["RunId", "EventForce", "AssignedForce"])
-  deployments = pd.read_csv(path / "deployments.csv", index_col=["RunId", "Event"])[["Hit10Pct", "Hit40Pct", "Hit60Pct", "Hit100Pct"]].drop_duplicates()
+  deployments = pd.read_csv(path / "deployments.csv")[["RunId", "Event", "Hit10Pct", "Hit40Pct", "Hit60Pct", "Hit100Pct"]].drop_duplicates().set_index(["RunId", "Event"])
   locations = pd.read_csv(path / "locations.csv", index_col="RunId")
+
+  # check we havent lost any data
+  #assert len(deployments.index.get_level_values(0).unique()) == 41*40/2 #10000
+  assert len(deployments.index.get_level_values(1).unique()) == 41
+  #assert len(deployments) == 70000 #41*40
 
   print(allocations)
   print(deployments)
@@ -57,28 +59,8 @@ def analysis(scenario):
   dep_times = means.merge(stddevs, left_index=True, right_index=True) 
 
   print(dep_times)
+  assert len(dep_times) == 41
   dep_times.to_csv(f"./{scenario}_dep_times.csv")
-
-  #deployments = deployments[deployments.index.get_level_values("Time") < 24.0]
-
-  # fig, axs = plt.subplots(7,6, figsize=(15,15), sharex=True, sharey=True)
-  # fig.suptitle("Deployment times, "+scenario.replace("events", " simultaneous public order events"), y=0.99)
-  # #print(axs)
-
-  # for i, force in enumerate(forces):
-  #   y, x = i // 6, i % 6
-  #   print(i, x, y, force)
-  #   dept = deployments.xs(force, level="Event")["DeployedPct"].unstack(level=0)
-  #   # #print(dept)
-  #   dept.plot(ax=axs[y,x], legend=False)
-  #   axs[y,x].set_title(force)
-  # plt.xlabel("Time (hours)")
-  # plt.ylabel("Deployment (%)")
-  # plt.tight_layout()
-  # plt.savefig(f"./doc/{scenario}-deptime.png", bbox_inches="tight")
-  # #plt.show()
-
-
 
 
 if __name__ == "__main__":
