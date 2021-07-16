@@ -44,10 +44,12 @@ class SimpleModel():
 
       self.psus.loc[self.psus.name == force, "mobilisation"] = np.array(mob)
 
-      print(n, mob)
-
+      #print(n, mob)
 
     self.event_data = initialise_event_data(self, event_resources, event_start, event_duration, f, c)
 
     allocate(self.event_data, f, self.psus, self.routes)
-    print(self.psus)
+    #print(self.psus)
+
+  def location_names(self):
+    return list(filter(None, self.psus.assigned_to.unique()))
