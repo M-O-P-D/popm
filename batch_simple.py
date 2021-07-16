@@ -20,7 +20,7 @@ from shapely import wkt
 import humanleague as hl
 
 from popm.simple_model import PublicOrderPolicing
-from popm.utils import sample_all_locations, sample_locations_quasi, run_context, collate_and_write_results, adjust_staffing
+from popm.utils import sample_all_locations, sample_locations_quasi, run_context, adjust_staffing # <- TODO
 from popm.initialisation import load_force_data, PSU_OFFICERS, CORE_FUNCTIONS
 
 
@@ -79,6 +79,7 @@ if __name__ == "__main__":
     n_runs *= len(locations)
 
     print("Total runs = %d" % n_runs)
+
     # make run_no unique across multiple processes (note exact no. of runs might be different for each process, so just offset by 1e6)
     run_no = rank * 1000000
 
@@ -119,8 +120,23 @@ if __name__ == "__main__":
   path = Path(args.config.replace("scenario", "model-output").replace(".json", "/"))
   path.mkdir(parents=True, exist_ok=True)
   shutil.copy(args.config, path)
-  deployment_times.to_csv(path / "deployment_times.csv", index=False)
-  active_psus.to_csv(path / "active_psus.csv", index=False)
+
+  rank, size = run_context()
+
+  if size == 1:
+    # single-process case
+    deployment_times.to_csv(path / "deployment_times.csv", index=False)
+    active_psus.to_csv(path / "active_psus.csv", index=False)
+  else:
+    # root process gets data from all the others and writes it
+    from mpi4py import MPI
+    comm = MPI.COMM_WORLD
+
+    all_deployment_times = comm.gather(deployment_times, root=0)
+    all_active_psus = comm.gather(active_psus, root=0)
+    if rank == 0:
+      pd.concat(all_deployment_times).to_csv(path / "deployment_times.csv", index=False)
+      pd.concat(all_active_psus).to_csv(path / "active_psus.csv", index=False)
 
   print("Runtime: %ss" % (time.time() - start_time))
 
