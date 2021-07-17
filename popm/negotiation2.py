@@ -3,9 +3,11 @@ import re # numpy as np
 from .initialisation import PSU_OFFICERS
 
 
-def rank_forces(force_names, event_location, psus, routes, event_end_minus1):
+def rank_forces(force_names, event_location, psus, routes, event_end_minus1, include_reserved=False):
   """
   Ranks according to distance/cost and supply
+  include_reserved=True cab be set to allow forces to use reserved PSUs of other forces in their alliance
+  In practice this means City of London can access to the Met's reserved PSUs (no other force currently has any reserved PSUs)
   """
   # TODO for now ranking is based on average mobilisation time
   ranks = []
@@ -15,7 +17,10 @@ def rank_forces(force_names, event_location, psus, routes, event_end_minus1):
       #print(routes)
       despatch_time = routes.loc[(f, event_location)]["time"]
       if despatch_time < event_end_minus1:
-        avail = len(psus[(psus.name == f) & (psus.reserved == False) & (psus.assigned == False)])
+        if include_reserved:
+          avail = len(psus[(psus.name == f) & (psus.assigned == False)])
+        else:
+          avail = len(psus[(psus.name == f) & (psus.reserved == False) & (psus.assigned == False)])
         ranks.append((f, avail / despatch_time))
   return sorted(ranks, key=lambda t: -t[1])
 
@@ -30,7 +35,7 @@ def allocate(events, forces, psus, routes):
     # this will get up to req values
     avail = psus.loc[(psus.name == r["name"]) & (~psus.assigned)].index[:req]
     n_avail = len(avail)
-    print(f"{r['name']} supplies {n_avail} PSUs to {r['name']}")
+    print(f"{r['name']} supplies {n_avail} PSUs to self")
 
     psus.loc[avail, "assigned"] = True
     psus.loc[avail, "assigned_to"] = r["name"]
@@ -49,13 +54,13 @@ def allocate(events, forces, psus, routes):
 
     if req > 0:
       f = psus[psus.Alliance == r["Alliance"]]["name"].unique()
-      ranks = rank_forces(f, r["name"], psus, routes, r["time_to_end"])
+      ranks = rank_forces(f, r["name"], psus, routes, r["time_to_end"], include_reserved=True)
 
       for rank in ranks:
-        avail = psus.loc[(psus.name == rank[0]) & (psus.reserved == False) & (psus.assigned == False)].index[:req]
+        avail = psus.loc[(psus.name == rank[0]) & (psus.assigned == False)].index[:req]
         n_avail = len(avail)
 
-        print(f"{rank[0]} supplies {n_avail} PSUs to {r['name']}")
+        print(f"{rank[0]} (alliance) supplies {n_avail} PSUs {r['name']}")
 
         psus.loc[avail, "assigned"] = True
         psus.loc[avail, "assigned_to"] = r["name"]
