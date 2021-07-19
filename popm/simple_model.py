@@ -42,6 +42,8 @@ class PublicOrderPolicing():
 
     self.event_data = initialise_event_data(self, event_resources, event_start, event_duration, force_data, centroids)
 
+    print(f"Simulating events in {self.event_data.name.values}")
+
     allocate(self.event_data, force_data, self.psus, self.routes)
 
     assert np.all(self.event_data.resources_required - self.event_data.resources_allocated == 0), "event(s) not fully allocated"

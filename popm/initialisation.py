@@ -146,7 +146,7 @@ def create_psu_data(forces, centroids):
 
 
 def initialise_event_data(model, event_resources, event_start, event_duration, force_data, centroids):
-  # activate events as per parameters
+  # activate events as per parameters and randomise the order
   event_data = force_data.loc[model.event_locations, ["name", "Alliance", "geometry"]].sample(frac=1, random_state=npbitgen).reset_index(drop=True)
 
   # switch from boundary to centroid

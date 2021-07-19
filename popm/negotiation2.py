@@ -60,7 +60,7 @@ def allocate(events, forces, psus, routes):
         avail = psus.loc[(psus.name == rank[0]) & (psus.assigned == False)].index[:req]
         n_avail = len(avail)
 
-        print(f"{rank[0]} (alliance) supplies {n_avail} PSUs {r['name']}")
+        print(f"{rank[0]} (alliance, rank={rank[1]:.2f}) supplies {n_avail} PSUs to {r['name']}")
 
         psus.loc[avail, "assigned"] = True
         psus.loc[avail, "assigned_to"] = r["name"]
@@ -86,7 +86,7 @@ def allocate(events, forces, psus, routes):
         assert len(avail) <= req
         n_avail = len(avail)
 
-        print(f"{rank[0]} supplies {n_avail} PSUs to {r['name']}")
+        print(f"{rank[0]} (rank={rank[1]:.2f}) supplies {n_avail} PSUs to {r['name']}")
 
         psus.loc[avail, "assigned"] = True
         psus.loc[avail, "assigned_to"] = r["name"]
