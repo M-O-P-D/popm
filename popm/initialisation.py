@@ -70,6 +70,11 @@ def load_force_data():
   # ensure data is not geographically linked by sorting alphabetically
   force_data = force_data.sort_values(["name"]).reset_index(drop=True)
 
+  # # generate alliance boundaries (uncomment if needed)
+  # alliance_boundaries = gpd.GeoDataFrame(data={"name": force_data.Alliance.unique()})
+  # alliance_boundaries["geometry"] = alliance_boundaries.name.apply(lambda n: cascaded_union(force_data[force_data.Alliance == n]["geometry"]))
+  # alliance_boundaries.to_file("./data/alliances.geojson", driver="GeoJSON")
+
   return force_data, centroids
 
 def create_psu_data(forces, centroids):
