@@ -74,6 +74,8 @@ if __name__ == "__main__":
       locations = sample_all_locations(n_locations, master_config["no_of_events"])
     elif isinstance(master_config["event_locations"], int):
       locations = sample_locations_quasi(n_locations, master_config["no_of_events"], master_config["event_locations"])
+    elif isinstance(master_config["event_locations"], str) and master_config["event_locations"] == "Breaking Point":
+      locations = 6*[list(force_data.name[force_data.name.isin(["Metropolitan Police", "Greater Manchester", "West Midlands"])].index)]
     else:
       locations = master_config["event_locations"]
     n_runs *= len(locations)

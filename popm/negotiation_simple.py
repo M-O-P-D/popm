@@ -2,8 +2,13 @@ from math import ceil
 import re # numpy as np
 from .initialisation import PSU_OFFICERS
 
+"""
+This is a reimplementation of the negotiation algorithm for the simple_model version
+It's functionally identical to the original but operates on different data structures
+"""
 
-def rank_forces(force_names, event_location, psus, routes, event_end_minus1, include_reserved=False):
+
+def rank_forces(force_names, event_location, psus, routes, event_end, include_reserved=False):
   """
   Ranks according to distance/cost and supply
   include_reserved=True cab be set to allow forces to use reserved PSUs of other forces in their alliance
@@ -15,13 +20,13 @@ def rank_forces(force_names, event_location, psus, routes, event_end_minus1, inc
     #print(f)
     if f != event_location:
       #print(routes)
-      despatch_time = routes.loc[(f, event_location)]["time"]
-      if despatch_time < event_end_minus1:
+      travel_time = routes.loc[(f, event_location)]["time"]
+      if travel_time < event_end:
         if include_reserved:
           avail = len(psus[(psus.name == f) & (psus.assigned == False)])
         else:
           avail = len(psus[(psus.name == f) & (psus.reserved == False) & (psus.assigned == False)])
-        ranks.append((f, avail / despatch_time))
+        ranks.append((f, avail / travel_time))
   return sorted(ranks, key=lambda t: -t[1])
 
 
@@ -44,9 +49,7 @@ def allocate(events, forces, psus, routes):
     events.loc[i, "resources_allocated"] += n_avail * PSU_OFFICERS
 
   # TODO: note - met non reserved PSUS are the slow to mobilise ones, is this realistic
-  # also, should City be allowed reserved ones (i.e. alliance)?
 
-  #print(events)
   # now from alliance
   for i, r in events.iterrows():
 
@@ -69,7 +72,6 @@ def allocate(events, forces, psus, routes):
         events.loc[i, "resources_allocated"] += n_avail * PSU_OFFICERS
         req -= n_avail
         if req <= 0: break
-  #print(events)
 
   # finally from outside alliance
   for i, r in events.iterrows():

@@ -7,7 +7,7 @@ from pandas.core.indexes.api import all_indexes_same
 from shapely import wkt
 from math import ceil
 from .initialisation import PSU_OFFICERS, load_force_data, create_psu_data, initialise_event_data
-from .negotiation2 import allocate
+from .negotiation_simple import allocate
 
 MOBILISATION_TIMES = {
   1: 0.1, # 10% in 1 hour
@@ -44,6 +44,10 @@ class PublicOrderPolicing():
 
     print(f"Simulating events in {self.event_data.name.values}")
 
+    # uncomment this to remove the concept of force alliances (each force in alliance with self only)
+    # self.psus.Alliance = self.psus.name
+    # TODO add London alliance back in...
+
     allocate(self.event_data, force_data, self.psus, self.routes)
 
     assert np.all(self.event_data.resources_required - self.event_data.resources_allocated == 0), "event(s) not fully allocated"
@@ -69,6 +73,7 @@ class PublicOrderPolicing():
       result = pd.DataFrame(data={"location": r["name"], "total_requirement": req, "mobilisation_time": MOBILISATION_TIMES.keys()}) #, "time": np.nan})
       result["requirement_frac"] = result.mobilisation_time.apply(lambda k: MOBILISATION_TIMES[k])
       result["requirement"] = np.ceil(result.requirement_frac * req).astype(np.int64)
+      # take the i'th deployment time from a sorted array of deployment times to get the time at which i are deployed 
       result["actual"] = result.requirement.apply(lambda i: active[active.assigned_to==r["name"]].sort_values("deployed").head(i)["deployed"].values[-1])
 
       dep_times = dep_times.append(result)
