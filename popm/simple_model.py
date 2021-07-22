@@ -19,7 +19,7 @@ MOBILISATION_TIMES = {
 
 class PublicOrderPolicing():
 
-  def __init__(self, event_locations, event_resources, event_start, event_duration, routes, force_data, centroids):
+  def __init__(self, event_locations, event_resources, event_start, event_duration, routes, force_data, centroids, ignore_alliance=False):
 
     self.event_locations = event_locations
 
@@ -44,9 +44,9 @@ class PublicOrderPolicing():
 
     print(f"Simulating events in {self.event_data.name.values}")
 
-    # uncomment this to remove the concept of force alliances (each force in alliance with self only)
-    # self.psus.Alliance = self.psus.name
-    # TODO add London alliance back in...
+    # if ignore_alliance flag is set, each force is in alliance with itself only, apart from Met/City of London
+    if ignore_alliance:
+      self.psus.loc[self.psus.Alliance != "LONDON", "Alliance"] = self.psus.name
 
     allocate(self.event_data, force_data, self.psus, self.routes)
 

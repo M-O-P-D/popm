@@ -42,7 +42,8 @@ def run(config, run_no):
     config["event_duration"],
     routes,
     force_data,
-    centroids)
+    centroids,
+    config.get("ignore_alliance", False))
   return model.run_model()
 
 
@@ -69,13 +70,15 @@ if __name__ == "__main__":
     # - if not specifed, sample all combinations
     # - if an integer, sample that many combinations
     # - if an array, use the values as the event locations (each one itself an array)
-    # - if a string [web client only], use pre-specified random or fixed locations
+    # - if a string use pre-specified random or fixed locations
     if "event_locations" not in master_config:
       locations = sample_all_locations(n_locations, master_config["no_of_events"])
     elif isinstance(master_config["event_locations"], int):
       locations = sample_locations_quasi(n_locations, master_config["no_of_events"], master_config["event_locations"])
     elif isinstance(master_config["event_locations"], str) and master_config["event_locations"] == "Breaking Point":
-      locations = 6*[list(force_data.name[force_data.name.isin(["Metropolitan Police", "Greater Manchester", "West Midlands"])].index)]
+      # locations = 6*[list(force_data.name[force_data.name.isin(["Metropolitan Police", "Greater Manchester", "West Midlands"])].index)]
+      # this hack ensures all 6 permutations are simulated after the event order has been randomised (only for seed 19937!)
+      locations = [[13,22,38]] * 4 + [[38,22,13], [38,13,22]]
     else:
       locations = master_config["event_locations"]
     n_runs *= len(locations)
@@ -84,16 +87,6 @@ if __name__ == "__main__":
 
     # make run_no unique across multiple processes (note exact no. of runs might be different for each process, so just offset by 1e6)
     run_no = rank * 1000000
-
-    # location_lookup = pd.DataFrame(index=range(run_no, run_no+n_runs), columns={"EventLocations": ""})
-    # location_lookup.index.rename("RunId", inplace=True)
-    # deployments = pd.DataFrame(columns=["RunId", "Time", "Event", "Events", "EventStart", "EventDuration", "DeployedPct", "AllocatedPct"])
-    # allocations = pd.DataFrame(columns=["RunId", "EventForce", "AssignedForce", "Alliance", "PSUs"])
-    # resources = pd.DataFrame()
-
-    # resources_baseline = adjust_staffing(force_data[["name", "Alliance", "Officers", "POP"] \
-    #   + CORE_FUNCTIONS + [c+"_POP" for c in CORE_FUNCTIONS] + [c+"_MIN" for c in CORE_FUNCTIONS]],
-    #   master_config["staff_absence"]/100, master_config["duty_ratio"]/100)
 
     deployment_times = pd.DataFrame(columns=["RunId"])
     active_psus = pd.DataFrame(columns=["RunId"])
