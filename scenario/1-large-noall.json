@@ -1,0 +1,10 @@
+{
+  "no_of_events": 1,
+  "event_resources": [2475],
+  "event_start": [0],
+  "event_duration": 24,
+  "staff_absence": 0,
+  "duty_ratio": 100,
+  "timestep": 1,
+  "ignore_alliance": true
+}
