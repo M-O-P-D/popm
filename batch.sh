@@ -11,4 +11,4 @@
 # bail if no conda env activated
 [[ -z $CONDA_DEFAULT_ENV ]] && { echo "No conda env activated, exiting"; exit 1; }
 
-python batch.py "scenario/$1.json"
+python batch_simple.py "scenario/$1.json"

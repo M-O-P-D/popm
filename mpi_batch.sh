@@ -4,10 +4,10 @@
 #$ -M a.p.smith@leeds.ac.uk
 #$ -cwd -V
 #$ -l h_vmem=4G
-#$ -l h_rt=6:00:00
+#$ -l h_rt=4:00:00
 #$ -o log
 #$ -e log
-#$ -pe ib 20
+#$ -pe smp 24
 
-mpirun python batch.py "scenario/$1.json"
+mpirun python batch_simple.py "scenario/$1.json"
 
