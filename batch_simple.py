@@ -76,9 +76,9 @@ if __name__ == "__main__":
     elif isinstance(master_config["event_locations"], int):
       locations = sample_locations_quasi(n_locations, master_config["no_of_events"], master_config["event_locations"])
     elif isinstance(master_config["event_locations"], str) and master_config["event_locations"] == "Breaking Point":
-      # locations = 6*[list(force_data.name[force_data.name.isin(["Metropolitan Police", "Greater Manchester", "West Midlands"])].index)]
+      locations = [list(force_data.name[force_data.name.isin(["Metropolitan Police", "Greater Manchester", "West Midlands"])].index)]
       # this hack ensures all 6 permutations are simulated after the event order has been randomised (only for seed 19937!)
-      locations = [[13,22,38]] * 4 + [[38,22,13], [38,13,22]]
+      # locations = [[13,22,38]] * 4 + [[38,22,13], [38,13,22]]
     else:
       locations = master_config["event_locations"]
     n_runs *= len(locations)

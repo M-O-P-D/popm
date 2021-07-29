@@ -5,6 +5,6 @@
   "event_duration": 24,
   "staff_absence": 0,
   "duty_ratio": 100,
-  "timestep": 1,
+  "timestep": 15,
   "ignore_alliance": true
 }

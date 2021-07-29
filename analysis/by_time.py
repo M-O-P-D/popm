@@ -22,6 +22,10 @@ def analysis(scenario):
   #print(deployments)
 
   means = deployments["actual"].unstack(level=[1,2]).mean().unstack(level=1).add_prefix("mean-")
+
+  for col in ["mean-0.1", "mean-0.4", "mean-0.6", "mean-1.0"]:
+    means[col] = means[col].apply(lambda t: f"{int(t)}h{int(t*60)%60}m")
+  #means = means.apply(lambda t: f"{int(t)}h{int(t*60)%60}m")
   print(means)
 
   stddevs = deployments["actual"].unstack(level=[1,2]).std().unstack(level=1).add_prefix("stddev-")

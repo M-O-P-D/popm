@@ -111,7 +111,7 @@ chart_element = CustomChartModule(
 )
 
 
-map_element = MapModule(portray_map, [52.9, -1.8], 6, 600, 600)
+map_element = MapModule(portray_map, [52.9, -1.8], 7, 920, 840)
 console = LogElement()
 
 server = ModularServer(PublicOrderPolicing, [map_element, chart_element, console], "Public Order Policing Model", model_params)
