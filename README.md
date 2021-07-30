@@ -1,9 +1,8 @@
 # popm: Public Order Policing Model
 
 [![License](https://img.shields.io/github/license/mashape/apistatus.svg)](https://opensource.org/licenses/MIT)
-[![Codacy Badge](https://app.codacy.com/project/badge/Grade/220e164b605d4dd98771a5ab7e9281d1)](https://www.codacy.com?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=M-O-P-D/popm&amp;utm_campaign=Badge_Grade)
 
-![screenshot](./doc/screenshot2.png)
+![screenshot](./doc/mesa-gui.png)
 
 ## Developer Setup
 
@@ -11,7 +10,7 @@
 
 For batch mode, a more efficient (non-mesa) implementation is used that has no explicit timestepping.
 
-NOTE: the police force dataset used (for now) by the model is fictitious, regardless of this it is not stored in the repo in anticipation that the real data will be sensitive.
+NOTE: the police force dataset used by the model is sensitive data and is not stored in this repo. You will need to obtain a copy of this file in order to run the model.
 
 ### Native
 

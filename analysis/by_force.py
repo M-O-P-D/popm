@@ -1,174 +1,43 @@
-import pandas as pd
-import numpy as np
-from pathlib import Path
+import geopandas as gpd
 import sys
-import geoplot
-import geoplot.crs as gcrs
-import mapclassify
+import matplotlib.pyplot as plt
 
 from popm.initialisation import load_force_data
 
-import seaborn as sns
-import matplotlib.pyplot as plt
+# NOTE: all postprocessing of simple_model output is now in analysis/by_time.py
+# this file now just tests plotting force and alliance boundaries
 
-forces = ['Avon and Somerset', 'Beds Cambs Herts', 'Cheshire',
-       'City of London', 'Cleveland', 'Cumbria', 'Derbyshire',
-       'Devon and Cornwall', 'Dorset', 'Durham', 'Dyfed-Powys', 'Essex',
-       'Gloucestershire', 'Greater Manchester', 'Gwent', 'Hampshire',
-       'Humberside', 'Kent', 'Lancashire', 'Leicestershire',
-       'Lincolnshire', 'Merseyside', 'Metropolitan Police', 'Norfolk',
-       'North Wales', 'North Yorkshire', 'Northamptonshire',
-       'Northumbria', 'Nottinghamshire', 'South Wales', 'South Yorkshire',
-       'Staffordshire', 'Suffolk', 'Surrey', 'Sussex', 'Thames Valley',
-       'Warwickshire', 'West Mercia', 'West Midlands', 'West Yorkshire',
-       'Wiltshire']
+# forces = ['Avon and Somerset', 'Beds Cambs Herts', 'Cheshire',
+#        'City of London', 'Cleveland', 'Cumbria', 'Derbyshire',
+#        'Devon and Cornwall', 'Dorset', 'Durham', 'Dyfed-Powys', 'Essex',
+#        'Gloucestershire', 'Greater Manchester', 'Gwent', 'Hampshire',
+#        'Humberside', 'Kent', 'Lancashire', 'Leicestershire',
+#        'Lincolnshire', 'Merseyside', 'Metropolitan Police', 'Norfolk',
+#        'North Wales', 'North Yorkshire', 'Northamptonshire',
+#        'Northumbria', 'Nottinghamshire', 'South Wales', 'South Yorkshire',
+#        'Staffordshire', 'Suffolk', 'Surrey', 'Sussex', 'Thames Valley',
+#        'Warwickshire', 'West Mercia', 'West Midlands', 'West Yorkshire',
+#        'Wiltshire']
 
-def analysis(scenario):
-  path = Path(f"./model-output/{scenario}")
-  allocations = pd.read_csv(path / "allocations.csv", index_col=["RunId", "EventForce", "AssignedForce"])
-  deployments = pd.read_csv(path / "deployments.csv", index_col=["RunId", "Time", "Event"])
-  locations = pd.read_csv(path / "locations.csv", index_col="RunId")
-
-  print(allocations)
-  print(deployments)
-  print(locations)
-  print(locations.columns.values)
-
-  # appearances = {force: len(locations[locations.EventLocations.str.contains(force)]) for force in forces}
-
-  appearances = pd.DataFrame(data={"Force": forces})
-  appearances["Appearances"] = appearances.Force.apply(lambda force: len(locations[locations.EventLocations.str.contains(force)]))
-  appearances = appearances.drop_duplicates() \
-                           .set_index("Force") \
-                           .sort_values(by="Appearances")
-
-  print(appearances.to_string())
-  print(appearances.mean())
-
-  print(deployments.head())
-
-  dep_times = deployments[["DeployedPct"]].unstack(level=1)#.drop(24.0, axis=1)
-  dep_times.columns = dep_times.columns.droplevel().astype(str)
-
-  # drop 24h as dep=0 (event has ended)
-  dep_times = dep_times.drop(["24.0"], axis=1)
-
-
-  dep_times["dep10"] = np.nan
-  dep_times["dep40"] = np.nan
-  dep_times["dep60"] = np.nan
-  dep_times["dep100"] = np.nan
-
-
-  # this works with flat functions
-  def interp(deplevel, deps, times):
-    for i in range(len(times)):
-      if deps[i] >= deplevel: return times[i]
-    return 24.0 # this indicates event not fully resourced where it ends
-
-  t = np.arange(0.0, 24.0, 1.0)
-  for i,r in dep_times.iterrows():
-    #print(i)
-    r["dep10"] = interp(10.0, r.values[:24], t)
-    r["dep40"] = interp(40.0, r.values[:24], t)
-    r["dep60"] = interp(60.0, r.values[:24], t)
-    r["dep100"] = interp(100.0, r.values[:24], t)
-  
-  dep_times = dep_times.drop([str(i) for i in t], axis=1)
-  print(dep_times)
-  dep_times.to_csv(path / "deployment_times.csv")
-#print(df.columns.values)
-
-
-def visualise(scenario):
-  path = Path(f"./model-output/{scenario}")
+def visualise():
 
   force_data, _ = load_force_data()
   force_data = force_data[["name", "geometry"]]#.set_index("name", drop=True)
+
+  alliances = gpd.read_file("./data/alliances.geojson")
+
+  print(alliances)
 
   force_data["label_anchor"] = force_data["geometry"].apply(lambda g: str(g.representative_point())) #.coords[:][0])
 
   print(force_data)
 
-  # [["name", "geometry"]]
-  force_data.to_file("./forces.json", driver="GeoJSON")
+  ax = force_data.plot(figsize=(10,10))
+  alliances.plot(ax=ax, facecolor='none', edgecolor="black")
 
-  # mean_dep_times = pd.read_csv(path / "mean_dep_times.csv").add_prefix("mean-") #, index_col=["RunId", "Event"])
-  # # print(dep_times.head())
-  # stddev_dep_times = pd.read_csv(path / "stddev_dep_times.csv").add_prefix("stddev-")
-
-  # force_data = force_data.merge(mean_dep_times, left_on="name", right_on="mean-Event").drop("mean-Event", axis=1) \
-  #                        .merge(stddev_dep_times, left_on="name", right_on="stddev-Event").drop("stddev-Event", axis=1)
-  
-
-  # print(force_data)
-  # force_data.to_file(path / "force_data")
-  #print(help(force_data.plot))
-
-  # ax = force_data.plot(figsize=(12,12))
-  # plt.annotate(s=force_data.index, xy=force_data.label_anchor)
-  # # scheme = scheme = mapclassify.Quantiles(force_data.dep10, k=5)
-  # # ax = geoplot.choropleth(force_data.geometry, hue=force_data.dep10, scheme=scheme, projection=gcrs.OSGB, figsize=(12,12))
-
-  # force_data.apply(lambda r: ax.text(*r.geometry.centroid.coords[0], s=r["name"], ha='center', va='top'), axis=1)
-  # plt.axis("off")
-
-  # # fig, axs = plt.subplots(nrows=4, figsize=(15,18), sharex=True)
-  # # i = 0
-  # # for dep in ["dep10", "dep40", "dep60", "dep100"]:
-  # #   dep_time = dep_times[dep].unstack()
-  # #   axs[i] = sns.boxplot(ax=axs[i], data=dep_time, showfliers = False)#, boxprops=dict(alpha=.3))
-  # #   plt.xticks(rotation=90)
-  # #   axs[i].set_xlabel("")
-  # #   axs[i].set_ylabel("Time to %s%% deployment (hours)" % dep.replace("dep", ""))
-  # #   i = i + 1
-
-  # # axs[3].set_xlabel("Event location")
-  # # fig.suptitle(scenario.replace("events", " simultaneous public order events"), y=0.99)
-  # #plt.tight_layout()
-  # # plt.savefig(f"./doc/{scenario}.png", bbox_inches="tight")
-
-  # plt.show()
-
-def summarise(scenario):
-  path = Path(f"./model-output/{scenario}")
-
-  dep_times = pd.read_csv(path / "deployment_times.csv", index_col=["RunId", "Event"])
-  print(dep_times.head())
-
-  #i = 0
-  # for dep in ["dep10", "dep40", "dep60", "dep100"]:
-  #   dep_time = dep_times[dep].unstack()
-  #   print(dep_time.mean())
-  #   break
-  # mean_dep_times = pd.concat([dep_times[dep].unstack().mean() for dep in ["dep10", "dep40", "dep60", "dep100"] ], axis=1)
-  # print(mean_dep_times)
-
-  mean_dep_times = pd.DataFrame(data={dep: dep_times[dep].unstack().mean() for dep in ["dep10", "dep40", "dep60", "dep100"] })
-  # subtract mobiisation
-  #mean_dep_times.dep10 -= 1.0
-  #mean_dep_times.dep40 -= 4.0
-  #mean_dep_times.dep60 -= 8.0
-  #mean_dep_times.dep100 -= 16.0
-
-  
-  #print(mean_dep_times)
-
-  #print(dep_times["dep10"].unstack())
-
-  stddev_dep_times = pd.DataFrame(data={dep: dep_times[dep].unstack().std() for dep in ["dep10", "dep40", "dep60", "dep100"] })
-  #print(stddev_dep_times)
-  
-  mean_dep_times = mean_dep_times.add_prefix("mean-").merge(stddev_dep_times.add_prefix("stddev-"), left_index=True, right_index=True) 
-
-  print(mean_dep_times)
-
-  # stddev_dep_times.to_csv(path / "stddev_dep_times.csv")
-  mean_dep_times.to_csv(f"./{scenario}_dep_times.csv")
+  plt.show()
 
 
 if __name__ == "__main__":
-  assert len(sys.argv) == 2
-  analysis(sys.argv[1])
-  summarise(sys.argv[1])
-  #visualise(sys.argv[1])
+  assert len(sys.argv) == 1
+  visualise()
