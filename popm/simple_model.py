@@ -2,11 +2,8 @@
 
 import numpy as np
 import pandas as pd
-import geopandas as gpd
-from pandas.core.indexes.api import all_indexes_same
-from shapely import wkt
 from math import ceil
-from .initialisation import PSU_OFFICERS, load_force_data, create_psu_data, initialise_event_data
+from .initialisation import PSU_OFFICERS, create_psu_data, initialise_event_data
 from .negotiation_simple import allocate
 
 MOBILISATION_TIMES = {

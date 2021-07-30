@@ -1,10 +1,10 @@
 
-import numpy as np
+# DEPRECATED
+
 import pandas as pd
 from pandas import ExcelWriter
 from pathlib import Path
 
-import seaborn as sns
 import matplotlib.pyplot as plt
 
 scenarios = ["7-small", "13-small", "19-small", "3-medium", "6-medium", "8-medium", "1-large", "2-large", "3-large"]

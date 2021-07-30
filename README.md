@@ -60,7 +60,7 @@ qsub batch.sh 1-large
 
 To summarise runs (by force) use e.g.
 
-```
+```sh
 python analysis/by_time.py 19-small-noall
 ```
 

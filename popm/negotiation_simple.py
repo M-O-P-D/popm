@@ -1,5 +1,3 @@
-from math import ceil
-import re # numpy as np
 from .initialisation import PSU_OFFICERS
 
 """

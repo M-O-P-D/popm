@@ -9,7 +9,7 @@ import humanleague as hl
 from pathlib import Path
 import shutil
 
-from .initialisation import PSU_OFFICERS, CORE_FUNCTIONS
+from .initialisation import CORE_FUNCTIONS
 
 
 _bng_proj = pyproj.Proj(init='epsg:27700')

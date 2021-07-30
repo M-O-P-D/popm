@@ -5,19 +5,13 @@ import geopandas as gpd
 
 from math import ceil, sqrt
 
-from shapely.geometry import Point
 from shapely.ops import cascaded_union
-from shapely import wkt
-
-import humanleague as hl
 
 PSU_OFFICERS = 25
 
 CORE_FUNCTIONS = ["emergency", "firearms", "major_incident", "public_order", "serious_crime", "custody"]
 
-from .utils import npgen, npbitgen
-
-
+from .utils import npbitgen
 
 def load_force_data():
 

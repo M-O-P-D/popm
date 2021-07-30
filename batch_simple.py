@@ -17,12 +17,9 @@ warnings.filterwarnings(action='ignore', category=FutureWarning, module=r'.*pypr
 import geopandas as gpd
 from shapely import wkt
 
-import humanleague as hl
-
 from popm.simple_model import PublicOrderPolicing
 from popm.utils import sample_all_locations, sample_locations_quasi, run_context, adjust_staffing # <- TODO
-from popm.initialisation import load_force_data, PSU_OFFICERS, CORE_FUNCTIONS
-
+from popm.initialisation import load_force_data
 
 # load this data once only (its a bottleneck and its constant anyway)
 df = pd.read_csv("./data/force_centroid_routes.zip")
