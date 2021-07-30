@@ -1,14 +1,37 @@
-from .initialisation import PSU_OFFICERS
-
 """
 This is a reimplementation of the negotiation algorithm for the simple_model version
 It's functionally identical to the original but operates on different data structures
 """
 
+from .initialisation import PSU_OFFICERS
+import numpy as np
+
+
+def rank_forces_by_deployment_time(force_names, event_location, psus, routes, event_end, include_reserved=False):
+  """
+  Ranks according to deployment time (mobilisation + travel) and supply
+  include_reserved=True can be set to allow forces to use reserved PSUs of other forces in their alliance
+  In practice this means City of London can access to the Met's reserved PSUs (no other force currently has any reserved PSUs)
+  """
+  # TODO for now ranking is based on average mobilisation time
+  ranks = []
+  for f in force_names:
+    #print(f)
+    if f != event_location:
+      #print(routes)
+      travel_time = routes.loc[(f, event_location)]["time"]
+      if travel_time < event_end:
+        if include_reserved:
+          mob_times = psus[(psus.name == f) & (psus.assigned == False)]["mobilisation"].values
+        else:
+          mob_times = psus[(psus.name == f) & (psus.reserved == False) & (psus.assigned == False)]["mobilisation"].values
+        # note that if mob_times is empty this still works (you get a rank of 0)
+        ranks.append((f, np.sum(1.0 / (mob_times + travel_time))))
+  return sorted(ranks, key=lambda t: -t[1])
 
 def rank_forces(force_names, event_location, psus, routes, event_end, include_reserved=False):
   """
-  Ranks according to distance/cost and supply
+  Ranks according to distance/cost and supply (not taking mobilisation time into account)
   include_reserved=True cab be set to allow forces to use reserved PSUs of other forces in their alliance
   In practice this means City of London can access to the Met's reserved PSUs (no other force currently has any reserved PSUs)
   """
@@ -55,7 +78,7 @@ def allocate(events, forces, psus, routes):
 
     if req > 0:
       f = psus[psus.Alliance == r["Alliance"]]["name"].unique()
-      ranks = rank_forces(f, r["name"], psus, routes, r["time_to_end"], include_reserved=True)
+      ranks = rank_forces_by_deployment_time(f, r["name"], psus, routes, r["time_to_end"], include_reserved=True)
 
       for rank in ranks:
         avail = psus.loc[(psus.name == rank[0]) & (psus.assigned == False)].index[:req]
@@ -78,7 +101,7 @@ def allocate(events, forces, psus, routes):
 
     if req > 0:
       f = psus[psus.Alliance != r["Alliance"]]["name"].unique()
-      ranks = rank_forces(f, r["name"], psus, routes, r["time_to_end"])
+      ranks = rank_forces_by_deployment_time(f, r["name"], psus, routes, r["time_to_end"])
 
       for rank in ranks:
         avail = psus.loc[(psus.name == rank[0]) & (psus.reserved == False) & (psus.assigned == False)].index[:req]

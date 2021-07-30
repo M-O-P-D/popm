@@ -6,7 +6,7 @@ from mesa_geo.geoagent import AgentCreator # GeoAgent
 from mesa_geo import GeoSpace
 
 from .agents import ForceAreaAgent, ForcePSUAgent, PublicOrderEventAgent
-from .initialisation import load_force_data, create_psu_data, initialise_event_data
+from .initialisation import create_psu_data, initialise_event_data
 from .utils import adjust_staffing, hmm
 from .negotiation import allocate
 from .data_collection import * #get_num_assigned, get_num_deployed, get_num_shortfall, get_num_deficit

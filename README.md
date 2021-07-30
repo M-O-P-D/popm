@@ -92,14 +92,14 @@ If the dependencies don't install, giving errors like `undefined symbol: Error_G
 
 Install `kcachegrind` and `pyprof2calltree`, then profile using `cProfile` e.g:
 
-```
-$ python -m cProfile -o profile.log batch.py scenario/test.json scenario/test.csv
+```sh
+python -m cProfile -o profile.log batch.py scenario/test.json scenario/test.csv
 ```
 
 And visualise like so:
 
-```
-$ pyprof2calltree -k -i profile.log
+```sh
+pyprof2calltree -k -i profile.log
 ```
 
 Or just use `pstats` for a simpler text visualisation (without call graphs)
