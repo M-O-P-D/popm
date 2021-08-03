@@ -20,6 +20,12 @@ Firstly, install dependencies
 pip install -r requirements.txt
 ```
 
+or for conda environments:
+
+```
+conda env create -f conda-env.yml
+```
+
 ### Interactive Mode
 
 To run a graphical web-based front end:
