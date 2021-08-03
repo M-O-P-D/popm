@@ -23,7 +23,7 @@ dependencies:
   - click-plugins=1.1.1=py_0
   - cligj=0.7.2=pyhd8ed1ab_0
   - colorama=0.4.4=pyh9f0ad1d_0
-  - cookiecutter=1.6.0=py38_1000
+  - cookiecutter=1.7.3=pyh6c4a22f_0
   - cryptography=3.4.7=py38ha5dfef3_0
   - curl=7.78.0=hea6ffbf_0
   - cycler=0.10.0=py_2
@@ -33,7 +33,6 @@ dependencies:
   - fontconfig=2.13.1=hba837de_1005
   - freetype=2.10.4=h0708190_1
   - freexl=1.0.6=h7f98852_0
-  - future=0.18.2=py38h578d9bd_3
   - gdal=3.3.1=py38h507a4fd_1
   - geopandas=0.9.0=pyhd8ed1ab_1
   - geopandas-base=0.9.0=pyhd8ed1ab_1
@@ -43,11 +42,11 @@ dependencies:
   - giflib=5.2.1=h36c2ea0_2
   - hdf4=4.2.15=h10796ff_3
   - hdf5=1.10.6=nompi_h6a2412b_1114
-  - humanleague=2.1.8=py38h1fd1430_0
+  - humanleague=2.1.9=py38h1fd1430_0
   - icu=68.1=h58526e2_0
   - idna=3.1=pyhd3deb0d_0
   - jbig=2.1=h7f98852_2003
-  - jinja2=3.0.1=pyhd8ed1ab_0
+  - jinja2=2.11.3=pyh44b312d_0
   - jinja2-time=0.2.0=py_2
   - joblib=1.0.1=pyhd8ed1ab_0
   - jpeg=9d=h36c2ea0_0
@@ -81,7 +80,7 @@ dependencies:
   - libpng=1.6.37=h21135ba_2
   - libpq=13.3=hd57d9b9_0
   - librttopo=1.1.0=h1185371_6
-  - libspatialindex=1.9.3=h9c3ff4c_3
+  - libspatialindex=1.9.3=h9c3ff4c_4
   - libspatialite=5.0.1=h8694cbe_5
   - libssh2=1.9.0=ha56f1ee_6
   - libstdcxx-ng=11.1.0=h56837e0_6
@@ -93,7 +92,7 @@ dependencies:
   - libzip=1.8.0=h4de3113_0
   - lz4-c=1.9.3=h9c3ff4c_1
   - mapclassify=2.4.3=pyhd8ed1ab_0
-  - markupsafe=2.0.1=py38h497a2fe_0
+  - markupsafe=1.1.1=py38h497a2fe_3
   - matplotlib-base=3.4.2=py38hcc49a3a_0
   - mesa=0.8.9=pyhd8ed1ab_0
   - mpi=1.0=openmpi
@@ -106,7 +105,7 @@ dependencies:
   - openjpeg=2.4.0=hb52868f_1
   - openmpi=4.1.1=hbfc84c5_0
   - openssl=1.1.1k=h7f98852_0
-  - pandas=1.2.5=py38h1abd341_0
+  - pandas=1.3.1=py38h1abd341_0
   - patsy=0.5.1=py_0
   - pcre=8.45=h9c3ff4c_0
   - pillow=8.3.1=py38h8e6f84c_0
@@ -125,6 +124,7 @@ dependencies:
   - pysocks=1.7.1=py38h578d9bd_3
   - python=3.8.10=h49503c6_1_cpython
   - python-dateutil=2.8.2=pyhd8ed1ab_0
+  - python-slugify=5.0.2=pyhd8ed1ab_0
   - python_abi=3.8=2_cp38
   - pytz=2021.1=pyhd8ed1ab_0
   - readline=8.1=h46c0cb4_0
@@ -138,6 +138,7 @@ dependencies:
   - six=1.16.0=pyh6c4a22f_0
   - sqlite=3.36.0=h9cd32fc_0
   - statsmodels=0.12.2=py38h5c078b8_0
+  - text-unidecode=1.3=py_0
   - threadpoolctl=2.2.0=pyh8a188c0_0
   - tiledb=2.3.2=he87e0bf_0
   - tk=8.6.10=h21135ba_1
@@ -146,9 +147,9 @@ dependencies:
   - typing_extensions=3.10.0.0=pyha770c72_0
   - tzcode=2021a=h7f98852_2
   - tzdata=2021a=he74cb21_1
+  - unidecode=1.2.0=pyhd8ed1ab_0
   - urllib3=1.26.6=pyhd8ed1ab_0
   - wheel=0.36.2=pyhd3deb0d_0
-  - whichcraft=0.6.1=py_0
   - xerces-c=3.2.3=h9d8b166_2
   - xorg-kbproto=1.0.7=h7f98852_1002
   - xorg-libice=1.0.10=h7f98852_0
