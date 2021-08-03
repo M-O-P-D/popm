@@ -1,25 +1,19 @@
 """ batch mode """
 
-# TODO look into Mesa's BatchRunner class...
+from popm.simple_model import PublicOrderPolicing
+from popm.utils import sample_all_locations, sample_locations_quasi, run_context, adjust_staffing # <- TODO
+from popm.initialisation import load_force_data
 
 import json
 import time
 import pandas as pd
 import argparse
-#from collections import Counter
+# from collections import Counter
 from pathlib import Path
 import shutil
 
-# suppress deprecation warning we can't do anything about
-import warnings
-warnings.filterwarnings(action='ignore', category=FutureWarning, module=r'.*pyproj' )
-
 import geopandas as gpd
 from shapely import wkt
-
-from popm.simple_model import PublicOrderPolicing
-from popm.utils import sample_all_locations, sample_locations_quasi, run_context, adjust_staffing # <- TODO
-from popm.initialisation import load_force_data
 
 # load this data once only (its a bottleneck and its constant anyway)
 df = pd.read_csv("./data/force_centroid_routes.zip")
@@ -72,12 +66,11 @@ if __name__ == "__main__":
       locations = sample_all_locations(n_locations, master_config["no_of_events"])
     elif isinstance(master_config["event_locations"], int):
       locations = sample_locations_quasi(n_locations, master_config["no_of_events"], master_config["event_locations"])
-    elif isinstance(master_config["event_locations"], str) and master_config["event_locations"] == "Breaking Point":
-      locations = [list(force_data.name[force_data.name.isin(["Metropolitan Police", "Greater Manchester", "West Midlands"])].index)]
-      # this hack ensures all 6 permutations are simulated after the event order has been randomised (only for seed 19937!)
-      # locations = [[13,22,38]] * 4 + [[38,22,13], [38,13,22]]
-    else:
+    elif isinstance(master_config["event_locations"], list) and isinstance(master_config["event_locations"][0], list):
       locations = master_config["event_locations"]
+    else:
+      raise ValueError("event_locations must missing entirely (sample all combinations), an int (number to sample), "
+                       "or an array of arrays (either int locations or force name strings)")
     n_runs *= len(locations)
 
     print("Total runs = %d" % n_runs)
@@ -95,20 +88,16 @@ if __name__ == "__main__":
       # iterate event start
       for t in master_config["event_start"]:
         config["event_start"] = t
-        for l in locations:
-          config["event_locations"] = l
-          #agents, allocs,
-          d, p = run(config, run_no)#, resources_baseline)
+        for loc in locations:
+          config["event_locations"] = loc
+          d, p = run(config, run_no)  # , resources_baseline)
           d["RunId"] = run_no
           p["RunId"] = run_no
-          #location_lookup.loc[run_no, "EventLocations"] = "/".join(sorted(allocs.EventForce.unique()))
           deployment_times = deployment_times.append(d, ignore_index=True)
           active_psus = active_psus.append(p, ignore_index=True)
-          # allocations = allocations.append(allocs, ignore_index=True)
-          # resources = resources.append(res, ignore_index=True)
           run_no += 1
 
-  #collate_and_write_results(args.config, location_lookup, deployments, allocations, resources, resources_baseline)
+  # collate_and_write_results(args.config, location_lookup, deployments, allocations, resources, resources_baseline)
   path = Path(args.config.replace("scenario", "model-output").replace(".json", "/"))
   path.mkdir(parents=True, exist_ok=True)
   shutil.copy(args.config, path)
@@ -131,4 +120,3 @@ if __name__ == "__main__":
       pd.concat(all_active_psus).to_csv(path / "active_psus.csv", index=False)
 
   print("Runtime: %ss" % (time.time() - start_time))
-

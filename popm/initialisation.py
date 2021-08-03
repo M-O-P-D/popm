@@ -1,3 +1,7 @@
+# suppress deprecation warning we can't do anything about
+import warnings
+warnings.filterwarnings(action='ignore', category=FutureWarning, module=r'.*pyproj' )
+
 import numpy as np
 import pandas as pd
 import geopandas as gpd
@@ -141,7 +145,16 @@ def create_psu_data(forces, centroids):
 
 def initialise_event_data(model, event_resources, event_start, event_duration, force_data, centroids):
   # activate events as per parameters and randomise the order
-  event_data = force_data.loc[model.event_locations, ["name", "Alliance", "geometry"]].sample(frac=1, random_state=npbitgen).reset_index(drop=True)
+  
+
+  # if locations are force names convert to index values
+  if isinstance(model.event_locations[0], str):
+    event_locations = force_data.index[force_data.name.isin(model.event_locations)].tolist()
+  else:
+    event_locations = model.event_locations
+
+  #print(force_data)
+  event_data = force_data.loc[event_locations, ["name", "Alliance", "geometry"]].sample(frac=1, random_state=npbitgen).reset_index(drop=True)
 
   # switch from boundary to centroid
   event_data["geometry"] = centroids.loc[event_data["name"]]["geometry"].values
