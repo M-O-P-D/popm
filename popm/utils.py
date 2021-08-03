@@ -23,16 +23,20 @@ _proj_lonlat2bng = pyproj.Transformer.from_proj(_lonlat_proj, _bng_proj)
 # def deserialise_geometry(wkt):
 #   return shapely.wkt.loads(wkt)
 
+
 def bng2lonlat(shape):
   return transform(_proj_bng2lonlat.transform, shape)
 
+
 def lonlat2bng(shape):
   return transform(_proj_lonlat2bng.transform, shape)
+
 
 def hmm(t):
   h = int(t)
   m = int((t - h) * 60)
   return "%dh%02dm" % (h, m)
+
 
 # use the MPI rank and size to offset the samples
 def run_context():
@@ -41,7 +45,8 @@ def run_context():
     return MPI.COMM_WORLD.rank, MPI.COMM_WORLD.size
   except Exception:
     # no MPI is not an error
-    return 0,1
+    return 0, 1
+
 
 def collate_and_write_results(config, location_lookup, deployments, allocations, resources, resources_baseline):
 
@@ -75,6 +80,7 @@ def collate_and_write_results(config, location_lookup, deployments, allocations,
       pd.concat(all_resources).to_csv(path / "resources.csv", index=False)
       resources_baseline.to_csv(path / "resources_baseline.csv", index=False)
 
+
 def adjust_staffing(unadjusted_force_data, staff_absence, duty_ratio):
   force_data = unadjusted_force_data.copy()
 
@@ -85,21 +91,21 @@ def adjust_staffing(unadjusted_force_data, staff_absence, duty_ratio):
   # decouple the category totals from the core area values
 
   # reduce numbers in each category consistent with the new totals above
-  for i,r in force_data[CORE_FUNCTIONS].iterrows():
+  for i, r in force_data[CORE_FUNCTIONS].iterrows():
     officers = r.to_numpy()
     new_total = int(np.sum(officers) * duty_ratio * (1-staff_absence))
     officers = hl.prob2IntFreq(officers, new_total)["freq"]
     # couldnt figure out a way to do this without a loop
-    for j,f in enumerate(CORE_FUNCTIONS):
+    for j, f in enumerate(CORE_FUNCTIONS):
       force_data.loc[i, f] = officers[j]
 
   columns = [f + "_POP" for f in CORE_FUNCTIONS]
-  for i,r in force_data[columns].iterrows():
+  for i, r in force_data[columns].iterrows():
     officers = r.to_numpy()
     new_total = int(np.sum(officers) * duty_ratio * (1-staff_absence))
     officers = hl.prob2IntFreq(officers, new_total)["freq"]
     # couldnt figure out a way to do this without a loop
-    for j,f in enumerate(columns):
+    for j, f in enumerate(columns):
       force_data.loc[i, f] = officers[j]
 
   return force_data
@@ -113,12 +119,14 @@ def sample_locations_randomly(n_locations, n_events, max_samples):
     return npgen.choice(locations, max_samples, replace=False)
   return locations
 
+
 # samples
 def sample_all_locations(n_locations, n_events):
   n_combs = math.comb(n_locations, n_events)
   offset, step = run_context()
   combs = combinations(range(n_locations), n_events)
   return list(islice(combs, offset, n_combs, step))
+
 
 def sample_locations_quasi(n_locations, n_events, max_samples):
 
@@ -138,7 +146,7 @@ def sample_locations_quasi(n_locations, n_events, max_samples):
 
   # workaround for issue with skipping being truncated to a power of two is to sample all the numbers in every process,
   # then take a unique chunk to ensure we get different parts of the sequence in each process
-  seq = np.sort((hl.sobolSequence(1, max_samples*size, 0)[max_samples*rank:max_samples*(rank+1),0] * n_combs).astype(int))
+  seq = np.sort((hl.sobolSequence(1, max_samples*size, 0)[max_samples * rank: max_samples * (rank + 1), 0] * n_combs).astype(int))
 
   # need to work in order, with relative offsets with generator
   seq = np.diff(seq, prepend=0)
@@ -147,7 +155,7 @@ def sample_locations_quasi(n_locations, n_events, max_samples):
   locations = [next(islice(combs, s-1, None)) for s in seq]
   return locations
 
+
 # seed generator differently for each process
 npbitgen = np.random.MT19937(19937 + run_context()[0])
 npgen = np.random.Generator(npbitgen)
-

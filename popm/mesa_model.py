@@ -2,7 +2,7 @@ import numpy as np
 from mesa import Model
 from mesa.time import SimultaneousActivation
 from mesa.datacollection import DataCollector
-from mesa_geo.geoagent import AgentCreator # GeoAgent
+from mesa_geo.geoagent import AgentCreator  # GeoAgent
 from mesa_geo import GeoSpace
 
 from .agents import ForceAreaAgent, ForcePSUAgent, PublicOrderEventAgent
@@ -21,7 +21,7 @@ class PublicOrderPolicing(Model):
 
     self.log = ["Initialising model"]
 
-    self.force_data = adjust_staffing(unadjusted_force_data, staff_absence/100, duty_ratio/100)
+    self.force_data = adjust_staffing(unadjusted_force_data, staff_absence / 100, duty_ratio / 100)
 
     # CustomChartVisualisation needs this to scaled deployed as a % of required (the member var is not used anywhere else)
     # TODO this is bad and is it even correct?
@@ -92,7 +92,7 @@ class PublicOrderPolicing(Model):
 
     event_data = initialise_event_data(self, event_resources, event_start, event_duration, self.force_data, centroids)
     self.log.append("Events started in %s" % event_data["name"].values)
-    factory = AgentCreator(PublicOrderEventAgent, { "model": self}, crs="epsg:27700")
+    factory = AgentCreator(PublicOrderEventAgent, {"model": self}, crs="epsg:27700")
     event_agents = factory.from_GeoDataFrame(event_data)
     self.grid.add_agents(event_agents)
     for agent in event_agents:

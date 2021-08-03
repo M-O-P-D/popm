@@ -7,10 +7,10 @@ from .initialisation import PSU_OFFICERS, create_psu_data, initialise_event_data
 from .negotiation_simple import allocate
 
 MOBILISATION_TIMES = {
-  1: 0.1, # 10% in 1 hour
-  4: 0.4, # 40% in 4 hours
-  8: 0.6,  # 60% in 8 hours
-  16: 1.0 # NB this figure is not part of the nationally recognised public order mobilsation timelines
+  1: 0.1,   # 10% in 1 hour
+  4: 0.4,   # 40% in 4 hours
+  8: 0.6,   # 60% in 8 hours
+  16: 1.0   # NB this figure is not part of the nationally recognised public order mobilsation timelines
 }
 
 
@@ -49,7 +49,6 @@ class PublicOrderPolicing():
 
     assert np.all(self.event_data.resources_required - self.event_data.resources_allocated == 0), "event(s) not fully allocated"
 
-
   def location_names(self):
     return list(filter(None, self.psus.assigned_to.unique()))
 
@@ -59,7 +58,7 @@ class PublicOrderPolicing():
     based on the nationally recognised mobilisation timelines and travel times
     """
 
-    active = self.psus[self.psus.assigned == True].copy()
+    active = self.psus[self.psus.assigned].copy()
     active["deployed"] = active["mobilisation"] + active["travel"]
 
     dep_times = pd.DataFrame()
@@ -67,11 +66,11 @@ class PublicOrderPolicing():
     for _, r in self.event_data.iterrows():
       req = r["resources_required"] // PSU_OFFICERS
 
-      result = pd.DataFrame(data={"location": r["name"], "total_requirement": req, "mobilisation_time": MOBILISATION_TIMES.keys()}) #, "time": np.nan})
+      result = pd.DataFrame(data={"location": r["name"], "total_requirement": req, "mobilisation_time": MOBILISATION_TIMES.keys()})  # , "time": np.nan})
       result["requirement_frac"] = result.mobilisation_time.apply(lambda k: MOBILISATION_TIMES[k])
       result["requirement"] = np.ceil(result.requirement_frac * req).astype(np.int64)
       # take the i'th deployment time from a sorted array of deployment times to get the time at which i are deployed 
-      result["actual"] = result.requirement.apply(lambda i: active[active.assigned_to==r["name"]].sort_values("deployed").head(i)["deployed"].values[-1])
+      result["actual"] = result.requirement.apply(lambda i: active[active.assigned_to == r["name"]].sort_values("deployed").head(i)["deployed"].values[-1])
 
       dep_times = dep_times.append(result)
 

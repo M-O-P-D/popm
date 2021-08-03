@@ -1,16 +1,11 @@
-
 import numpy as np
 import pandas as pd
 import geopandas as gpd
-
-from math import ceil, sqrt
-
 from shapely.ops import cascaded_union
 
 PSU_OFFICERS = 25
-
 CORE_FUNCTIONS = ["emergency", "firearms", "major_incident", "public_order", "serious_crime", "custody"]
-
+# must come after CORE_FUNCTIONS is defined
 from .utils import npbitgen
 
 def load_force_data():
@@ -22,11 +17,11 @@ def load_force_data():
   population_data = "./data/population_data.csv"
 
   # remove and rename columns
-  gdf = gpd.read_file(geojson, crs={ "init": "epsg:4326" }) \
-    .drop(["OBJECTID"], axis=1) \
-    .rename({"PFA16CD": "code", "PFA16NM": "name" }, axis=1) \
-    .set_index("code", drop=True) \
-    .to_crs(epsg=27700)
+  gdf = gpd.read_file(geojson, crs={"init": "epsg:4326"}) \
+           .drop(["OBJECTID"], axis=1) \
+           .rename({"PFA16CD": "code", "PFA16NM": "name"}, axis=1) \
+           .set_index("code", drop=True) \
+           .to_crs(epsg=27700)
 
   # Merge Beds/Cambs/Herts (only)
   gdf.at["E23000026", "geometry"] = cascaded_union([gdf.at["E23000023", "geometry"], gdf.at["E23000026", "geometry"], gdf.at["E23000027", "geometry"]])
@@ -34,9 +29,8 @@ def load_force_data():
   gdf.at["E23000026", "name"] = "Beds Cambs Herts"
 
   data = pd.read_csv(force_data_file) \
-    .replace({"Metropolitan": "Metropolitan Police",
-              "Bedfordshire": "Beds Cambs Herts"}) \
-    .rename({"Force": "name"}, axis=1)
+           .replace({"Metropolitan": "Metropolitan Police", "Bedfordshire": "Beds Cambs Herts"}) \
+           .rename({"Force": "name"}, axis=1)
   # POP = Public Order (trained) Police
 
   populations = pd.read_csv(population_data) \
@@ -72,6 +66,7 @@ def load_force_data():
 
   return force_data, centroids
 
+
 def create_psu_data(forces, centroids):
 
   # 1 PSU = 1 inspector + 3 sergeants + 21 constables
@@ -80,7 +75,7 @@ def create_psu_data(forces, centroids):
   # Assumption that each core function has a core of essential officers that can't be deployed elsewhere
   avail = 0
   for _, f in enumerate(CORE_FUNCTIONS):
-    avail += np.minimum(forces[f+"_POP"], np.maximum(0, forces[f] - forces[f+"_MIN"]))
+    avail += np.minimum(forces[f + "_POP"], np.maximum(0, forces[f] - forces[f + "_MIN"]))
 
   forces["available_psus"] = np.floor(avail / PSU_OFFICERS).astype(int)
   forces["dispatched_psus"] = 0
@@ -90,17 +85,16 @@ def create_psu_data(forces, centroids):
   psu_data["geometry"] = centroids.loc[psu_data["name"]]["geometry"].values
 
   # switch geometry from boundary to centroid
-  #TODO psu_data["geometry"] = centroids.loc[""] psu_data[]
   for _, r in forces.iterrows():
     n = r.available_psus
-    nres = min(r.reserved_psus, r.available_psus) # in case the reserve number is higher than the available
-    name = forces.name[r.name] # no idea why r.name is a number not a string
+    nres = min(r.reserved_psus, r.available_psus)  # in case the reserve number is higher than the available
+    name = forces.name[r.name]  # no idea why r.name is a number not a string
     if n < 1:
       psu_data.drop(psu_data[psu_data.name == name].index, inplace=True)
-    if n > 1: # first add reserved psus (that don't leave force area)
+    if n > 1:  # first add reserved psus (that don't leave force area)
       psu = psu_data[psu_data["name"] == name]
-      psu_data = psu_data.append([psu]*(n-1),ignore_index=True)
-    psu_data.loc[psu_data["name"] == name, "reserved"] = [True]*nres + [False]*(n-nres)
+      psu_data = psu_data.append([psu] * (n - 1), ignore_index=True)
+    psu_data.loc[psu_data["name"] == name, "reserved"] = [True] * nres + [False] * (n - nres)
     # check we have the right number
     assert len(psu_data[psu_data.name == name]) == n, "%s %d vs %d" % (name, len(psu_data[psu_data.name == name]), n)
 
@@ -140,7 +134,7 @@ def create_psu_data(forces, centroids):
   psu_data["assigned"] = False
   psu_data["dispatched"] = False
   psu_data["deployed"] = False
-  psu_data.index += 1000 # ensure unique
+  psu_data.index += 1000  # ensure unique
 
   return psu_data
 
@@ -168,6 +162,6 @@ def initialise_event_data(model, event_resources, event_start, event_duration, f
   event_data["time_to_start"] = event_start
   event_data["time_to_end"] = event_start + event_duration
 
-  event_data.index += 100 # ensure unique
+  event_data.index += 100  # ensure unique
 
   return event_data
