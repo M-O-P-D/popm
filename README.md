@@ -1,7 +1,7 @@
 # popm: Public Order Policing Model
 
 [![License](https://img.shields.io/github/license/mashape/apistatus.svg)](https://opensource.org/licenses/MIT)
-
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/5bc7f097056d4fbc8165a9568317d28e)](https://www.codacy.com/gh/M-O-P-D/popm/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=M-O-P-D/popm&amp;utm_campaign=Badge_Grade)
 ![screenshot](./doc/mesa-gui.png)
 
 ## Developer Setup
@@ -74,7 +74,7 @@ which produces output like:
 
 ```txt
 requirement_frac    mean-0.1 mean-0.4 mean-0.6 mean-1.0
-location                                               
+location
 Avon and Somerset      3h41m    6h24m    12h5m   17h45m
 Beds Cambs Herts        1h0m     8h0m    16h0m   17h35m
 Cheshire               1h44m     4h0m    4h44m    16h0m
