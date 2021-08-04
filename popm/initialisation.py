@@ -1,6 +1,6 @@
 # suppress deprecation warning we can't do anything about
 import warnings
-warnings.filterwarnings(action='ignore', category=FutureWarning, module=r'.*pyproj' )
+warnings.filterwarnings(action='ignore', category=FutureWarning, module=r'.*pyproj')
 
 import numpy as np
 import pandas as pd
@@ -11,6 +11,7 @@ PSU_OFFICERS = 25
 CORE_FUNCTIONS = ["emergency", "firearms", "major_incident", "public_order", "serious_crime", "custody"]
 # must come after CORE_FUNCTIONS is defined
 from .utils import npbitgen
+
 
 def load_force_data():
 
@@ -88,6 +89,10 @@ def create_psu_data(forces, centroids):
   # switch from boundary to centroid
   psu_data["geometry"] = centroids.loc[psu_data["name"]]["geometry"].values
 
+  # this is important as it sets the type of the column (the data is overwritten below)
+  # without this the dtype is object and the ~ operator doesn't work as you'd expect
+  psu_data["reserved"] = False
+
   # switch geometry from boundary to centroid
   for _, r in forces.iterrows():
     n = r.available_psus
@@ -145,7 +150,6 @@ def create_psu_data(forces, centroids):
 
 def initialise_event_data(model, event_resources, event_start, event_duration, force_data, centroids):
   # activate events as per parameters and randomise the order
-  
 
   # if locations are force names convert to index values
   if isinstance(model.event_locations[0], str):
@@ -153,7 +157,7 @@ def initialise_event_data(model, event_resources, event_start, event_duration, f
   else:
     event_locations = model.event_locations
 
-  #print(force_data)
+  # print(force_data)
   event_data = force_data.loc[event_locations, ["name", "Alliance", "geometry"]].sample(frac=1, random_state=npbitgen).reset_index(drop=True)
 
   # switch from boundary to centroid
