@@ -157,7 +157,7 @@ for(i in 1:3)
     #now you've collected deployment numbers at 10,40,60,100% prepare results for report table 
     colnames(results_for_report_table) <- c("Police Force Area", "10% Deployment", "40% Deployment", "60% Deployment", "100% Deployment")
     #and write it out 
-    write_csv(x = results_for_report_table, paste0("results/", folder, "/",nEvents,sizeEvents,"_report_table.csv"))
+    write_csv(x = results_for_report_table, paste0("results/", folder, "/REPORT_",nEvents,sizeEvents,"_table.csv"))
   }
 }
 
